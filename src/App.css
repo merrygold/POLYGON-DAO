@@ -1,6 +1,7 @@
 .header {
   padding: 30px;
   display: flex;
+  align-items:center;
   justify-content: space-between;
 }
 
@@ -8,4 +9,20 @@ a {
   cursor: pointer;
   text-decoration: none !important;
   color: white !important;
+}
+
+
+.connect-button {
+padding: 16px;
+border-radius: 20px;
+font-weight: bold;
+font-size: 16px;
+border-color: azure;
+background-color: rgb(207, 65, 255);
+color: white;
+}
+
+
+.connect-button:hover {
+  background-color: rgb(209, 86, 250);
 }

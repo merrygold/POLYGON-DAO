@@ -3,18 +3,17 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { MoralisProvider } from "react-moralis";
 import { BrowserRouter } from "react-router-dom";
 
 
 
 ReactDOM.render(
   <React.StrictMode>
-    <MoralisProvider appId="xxx" serverUrl="xxx">
+
       <BrowserRouter>
           <App />
       </BrowserRouter>
-    </MoralisProvider>
+ 
   </React.StrictMode>,
   document.getElementById('root')
 );
