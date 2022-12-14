@@ -1,71 +1,30 @@
-import React from 'react'
-// import { QRCode } from 'react-qr-svg';
-import QRCode from 'qrcode.react';
+import React, { useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react';
 // import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 import './Qr.css';
 
 export const QR = () => {
  
-  const base_url = window.location.origin+window.location.pathname;
-
-  window.onload = () => {
-      const qrBtnEl = document.querySelector('.btn-qr');
-      const qrCodeEl = document.querySelector('#qrcode');
-  
-      qrBtnEl.addEventListener('click', (e) => {
-          makeDisabled(qrBtnEl, false)
-  
-          fetch(base_url+'api/sign-in')
-              .then(r => Promise.all([Promise.resolve(r.headers.get('x-id')), r.json()]))
-              .then(([id, data]) => {
-                  console.log(data)
-                  makeQr(qrCodeEl, data)
-                  handleDisplay(qrCodeEl, true)
-                  handleDisplay(qrBtnEl, false);
-                  return id
-              })
-              .catch(err => console.log(err));
-  
-      });
-  
-  }
-  
-  function makeQr(el, data) {
-      return new QRCode(el, {
-          text: JSON.stringify(data),
-          width: 300,
-          height: 300,
-          colorDark: "#000",
-          colorLight: "#e9e9e9",
-          correctLevel: QRCode.CorrectLevel.H
-      });
-  }
-  
-  function handleDisplay(el, needShow, display = 'block') {
-      el.style.display = needShow ? display : 'none';
-  }
-  
-  function makeDisabled(el, disabled, cls = 'disabled') {
-      if (disabled) {
-          el.disabled = true
-          el.classList.add(cls);
-      } else {
-          el.classList.remove(cls);
-          el.disabled = false;
-      }
-  }
-
-    // const navigate = useNavigate();
-    //  navigate("/home")
+    const [qr , setQr] = useState('');
+    const [showQR, setShowQR] = useState(false)
+ 
+const main = async () => {
+  const response = await axios.get('https://deda-119-152-51-27.in.ngrok.io/api/sign-in', {
+    headers: {
+        "ngrok-skip-browser-warning": true
+    }
+  })
+  console.log(response.data)
+  setQr(response.data)
+  setShowQR(true)
+}
  
   return (
- 
         <main className="main-content">
-            <button className="btn-qr"> Sign Up </button>
-            <div id="qrcode"></div>
+            { showQR === false ? ( <button onClick={main} className="btn-qr"> Sign Up </button>) : (<QRCodeSVG value={JSON.stringify(qr)}/>) 
+        }     
         </main>
- 
-
   )
 }
 
