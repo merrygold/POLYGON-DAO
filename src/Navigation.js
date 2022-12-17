@@ -39,6 +39,7 @@ function Navigation() {
    
     <div className="header">
       <Link to="/" ><img width="260px" src={polygonLogo} alt="logo" /></Link>
+
       <Connect></Connect>
 
     </div>

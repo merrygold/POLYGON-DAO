@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import matic from "../images/Polygon_Faucet.png";
 import { useAccount } from "wagmi";
 import { ethers } from "ethers";
-import { useSigner } from "wagmi";
 
 const Moralis = require("moralis").default;
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
@@ -18,7 +17,7 @@ const Home2 = () => {
   // * Donations of current user
   const [donation, setDonation] = useState(0);
   // * Check if User verified or Not
-  const [isVerified, setIsVerified] = useState(false);
+  const [isMember, setIsMember] = useState(false);
 
   // * PassRate of Proposals
   const [passRate, setPassRate] = useState(0);
@@ -33,10 +32,11 @@ const Home2 = () => {
   // * Form submission
   const [sub, setSub] = useState(false);
 
+  const [isOwner, setIsOwner] = useState(false)
+
   const { isConnected, isDisconnected, address: userAddress } = useAccount();
 
   // * CONSTANTS
-  // * Setup Moralis
 
   // * CONTRACT ABI
   const ContractABI = [
@@ -462,20 +462,27 @@ const Home2 = () => {
 
   // ? Create a new proposal
   async function createProposal(description, requiredAmount) {
-
     
     const signer = (new ethers.providers.Web3Provider(window.ethereum)).getSigner()
 
+    const feeData = await signer.getFeeData()
 
     const daoVerifier = new ethers.Contract(address, ContractABI, signer)
    
-    const proposalTxn = await daoVerifier.createProposal(description, requiredAmount);
-    await proposalTxn.wait()
-    console.log("Created Proposal");
-    console.log(description);
-    console.log(requiredAmount);
+    try {
+      setLoading(true)
+      const proposalTxn = await daoVerifier.createProposal(description, requiredAmount, {gasLimit: 100000});
+      await proposalTxn.wait()
+      setLoading(false)
+      setSub(false);
+      
+    } catch (error) {
+      console.log(error)
+      setLoading(false)
+      setSub(false);
+    }
 
-    setSub(false);
+    
   }
 
   // * For Moralis Configuration (Must be Executed "ONLY ONCE")
@@ -601,6 +608,7 @@ const Home2 = () => {
             ])
           );
 
+          table.reverse()
           setProposals(table);
           setTotalP(results.length);
         }
@@ -640,7 +648,26 @@ const Home2 = () => {
         }
 
         async function getUserVerify() {
-          console.log("userVerify");
+          
+          const ownerFunc = "DAOowner";
+
+          const ownerOpt = {
+            abi: ContractABI,
+            functionName: ownerFunc,
+            address: address,
+            chain: chain,
+          };
+
+          const ownerStatus = await Moralis.EvmApi.utils.runContractFunction(
+            ownerOpt
+          );
+          const ownerAddress = ownerStatus?.toJSON();
+          
+          if (ownerAddress == userAddress) {
+            setIsOwner(true)
+            setIsMember(true)
+          }
+          else {
           const functionName = "isMember";
 
           const options = {
@@ -657,8 +684,8 @@ const Home2 = () => {
           );
           const status = statusRaw?.toJSON();
 
-          setIsVerified(status);
-          return status;
+          setIsMember(status);
+          }
         }
 
         async function getPassRate() {
@@ -718,8 +745,8 @@ const Home2 = () => {
 
         await getUserVerify();
 
-        if (isVerified) {
-          console.log(isVerified);
+        if (isMember) {
+   
           await getUserDonation();
           await getDaoBalance();
 
@@ -730,13 +757,19 @@ const Home2 = () => {
       }
       main();
     }
-  }, [isConnected, isVerified, userAddress, sub]);
+  }, [isConnected, isMember, userAddress]);
 
   return (
     <>
       <div className="content">
-        <div style={{ alignContent: "center", marginRight: "7px" }}>
-          {!isVerified && (
+        
+        <TabList defaultActiveKey={1} tabStyle="bulbUnion">
+          <Tab tabKey={1} tabName="DAO">
+          
+            <div className="tabContent">
+             
+              <div style={{ display: "flex", justifyContent: "center", marginTop: "-30px" }}>
+          {!isMember && (
             <Link style={{ textDecoration: "none" }} to="/qr">
               <Button
                 onClick={function noRefCheck() {}}
@@ -746,11 +779,7 @@ const Home2 = () => {
               />
             </Link>
           )}
-        </div>
-        <TabList defaultActiveKey={1} tabStyle="bulbUnion">
-          <Tab tabKey={1} tabName="DAO">
-            <div className="tabContent">
-              Governance Overview
+        </div> Governance Overview
               <div className="widgets">
                 <Widget
                   isLoading={isDisconnected || isLoading}
@@ -758,7 +787,7 @@ const Home2 = () => {
                   title="Proposals Created"
                   style={{ width: "200%" }}
                 >
-                  {!isLoading && isConnected && isVerified && (
+                  {!isLoading && isConnected && isMember && (
                     <div className="extraWidgetInfo">
                       <div className="extraTitle">Pass Rate</div>
                       <div className="progress">
@@ -776,8 +805,9 @@ const Home2 = () => {
                   info={daoBalance}
                   title="DAO Treasury Balance"
                 >
+                
                   <img
-                    style={{ marginRight: "80px", marginTop: "30px" }}
+                    style={{ marginTop: "30px" }}
                     width={"25px"}
                     height={"25px"}
                     src={matic}
@@ -792,8 +822,10 @@ const Home2 = () => {
                 />
               </div>
               <div>
-              {isVerified && isConnected && (
+
+              {isMember && isConnected && !isLoading &&
                 <Form
+                  isDisabled={isLoading}
                   buttonConfig={{
                     isLoading: sub,
                     loadingText: "Submitting Proposal",
@@ -802,7 +834,7 @@ const Home2 = () => {
                   }}
                   data={[
                     {
-                      inputWidth: "50%",
+                      inputWidth: "100%",
                       name: "Description",
                       type: "text",
                       validation: {
@@ -811,7 +843,7 @@ const Home2 = () => {
                       value: "",
                     },
                     {
-                      inputWidth: "30%",
+                      inputWidth: "20%",
                       name: "Required Amount",
                       type: "number",
                       validation: {
@@ -821,7 +853,7 @@ const Home2 = () => {
                     },
                   ]}
                   onSubmit={(e) => {
-                    setSub(true);
+                    setSub(true)
                     createProposal(
                       e.data[0].inputResult,
                       e.data[1].inputResult
@@ -829,11 +861,14 @@ const Home2 = () => {
                   }}
                   title="Create a New Proposal"
                 />
-              )}
+              
+            }
               </div>
 
    
               <div style={{ marginTop: "30px" }}>
+                <div style={{color: "#68738D", marginBottom: "20px", marginTop: "30px", alignContent: "center"}}>
+                  Recent Proposals</div>
                 <Table
                   isLoading={isDisconnected || isLoading}
                   id={1}
@@ -845,7 +880,7 @@ const Home2 = () => {
                     <span>Required Amount </span>,
                     <span>Status</span>,
                   ]}
-                  pageSize={100}
+                  pageSize={6}
                 />
               </div>
          
