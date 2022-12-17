@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import matic from "../images/Polygon_Faucet.png";
 import { useAccount } from "wagmi";
 import { ethers } from "ethers";
+import { useSigner } from "wagmi";
 
 const Moralis = require("moralis").default;
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
@@ -12,18 +13,24 @@ const { EvmChain } = require("@moralisweb3/common-evm-utils");
 const Home2 = () => {
   console.log("Home Root");
 
+  // * DAO Balance
   const [daoBalance, setDaoBalance] = useState(0);
+  // * Donations of current user
   const [donation, setDonation] = useState(0);
-
   // * Check if User verified or Not
   const [isVerified, setIsVerified] = useState(false);
 
+  // * PassRate of Proposals
   const [passRate, setPassRate] = useState(0);
+
+  // * Total Proposals
   const [totalP, setTotalP] = useState(0);
+  // * Proposals Data
   const [proposals, setProposals] = useState();
 
   const [isLoading, setLoading] = useState(false);
 
+  // * Form submission
   const [sub, setSub] = useState(false);
 
   const { isConnected, isDisconnected, address: userAddress } = useAccount();
@@ -423,23 +430,9 @@ const Home2 = () => {
 
   // * Generic Functions
 
-  // ? getEvent using specific ABI & TOPIC
-  async function getEvent(EventTopic, EventABI) {
-    const EventOptions = {
-      chain: chain,
-      address: address,
-      topic: EventTopic,
-      abi: EventABI,
-      // fromBlock: 16162627
-    };
-    const responseEvents = await Moralis.EvmApi.events.getContractEvents(
-      EventOptions
-    );
-    return responseEvents?.toJSON().result;
-  }
-
   // ? Get Status of a proposal
   async function getStatus(proposalId) {
+
     const functionName = "Proposals";
 
     const proposalOptions = {
@@ -451,6 +444,7 @@ const Home2 = () => {
         "": proposalId,
       },
     };
+
     const proposalDetails = await Moralis.EvmApi.utils.runContractFunction(
       proposalOptions
     );
@@ -468,23 +462,20 @@ const Home2 = () => {
 
   // ? Create a new proposal
   async function createProposal(description, requiredAmount) {
-    const functionName = "createProposal";
 
-    const options = {
-      abi: ContractABI,
-      functionName: functionName,
-      address: address,
-      chain: chain,
-      params: {
-        _description: description,
-        _requiredAmount: requiredAmount
-      },
-    };
-    // const proposalDetails =
-    //   await Moralis.EvmApi.utils.runContractFunction(options);
-    console.log()
+    
+    const signer = (new ethers.providers.Web3Provider(window.ethereum)).getSigner()
 
-    setSub(false)
+
+    const daoVerifier = new ethers.Contract(address, ContractABI, signer)
+   
+    const proposalTxn = await daoVerifier.createProposal(description, requiredAmount);
+    await proposalTxn.wait()
+    console.log("Created Proposal");
+    console.log(description);
+    console.log(requiredAmount);
+
+    setSub(false);
   }
 
   // * For Moralis Configuration (Must be Executed "ONLY ONCE")
@@ -494,12 +485,13 @@ const Home2 = () => {
       async function main() {
         async function configMoralis() {
           let moralisInitialized = await Moralis.Core.isStarted;
+
           if (!moralisInitialized) {
             console.log("Moralis Configured");
             await Moralis.start({
               apiKey:
-              "zLYFqOyS9Mc6G8jzDjx3PEPj8WrcktAYrdyt3QTf2ogr4tU5kUSSE1xsTkF4Idyn"
-                // "0KEpH3iOcb7NF49r9hh40AvjYWeFjxfAY15Zf7mzayVEfM9UW1Bt8ZJpcZbV1N2C",
+                "zLYFqOyS9Mc6G8jzDjx3PEPj8WrcktAYrdyt3QTf2ogr4tU5kUSSE1xsTkF4Idyn",
+              // "0KEpH3iOcb7NF49r9hh40AvjYWeFjxfAY15Zf7mzayVEfM9UW1Bt8ZJpcZbV1N2C",
               // ...and any other configuration
             });
           }
@@ -543,21 +535,46 @@ const Home2 = () => {
 
           const Proposal_Created_Event_TOPIC =
             "0x3ec21697eb8018b62928e5f290d2bccf3af51e8b6cdf71fceab712977647bba9";
-          const results = await getEvent(
-            Proposal_Created_Event_TOPIC,
-            Proposal_Created_Event_ABI
+
+          const proposalEventOptions = {
+            chain: chain,
+            address: address,
+            topic: Proposal_Created_Event_TOPIC,
+            abi: Proposal_Created_Event_ABI,
+          };
+          const response = await Moralis.EvmApi.events.getContractEvents(
+            proposalEventOptions
           );
-          for (let i=0; i <results.length; i++) {
-            if (results[i].RequiredAmount > 10) {
-              results.splice(i, 1)
+
+          const results = response?.toJSON().result;
+
+          // & Make it ascending for the table
+          results.reverse();
+
+          // * Get Status of the Proposal
+          const statusOfAllProposals = [0];
+
+          for (let i = 0; i < results.length; i++) {
+            let currentId = results[i].data.uid
+  
+            let statusOfCurrentProposal = await getStatus(currentId);
+            statusOfAllProposals.push(statusOfCurrentProposal);
+          }
+
+          // * Parse Bad Proposals
+          for (let i = 0; i < results.length; i++) {
+            if (Number(results[i].data.requiredAmount) > 10000) {
+              results.splice(i, 1);
+              i -= 1;
             }
           }
+
           const table = await Promise.all(
             results.map(async (e) => [
               e.data.uid,
               e.data.description,
               <div className="flex">
-                <div>{e.data.requiredAmount}</div>{" "}
+                <div>{e.data.requiredAmount}</div>
                 <img
                   style={{ marginLeft: "4px" }}
                   width={"25px"}
@@ -571,20 +588,19 @@ const Home2 = () => {
                 style={{ textDecoration: "none" }}
                 state={{
                   description: e.data.description,
-                  color: (await getStatus(e.data.uid)).color,
-                  text: (await getStatus(e.data.uid)).text,
+                  color: statusOfAllProposals[e.data.uid].color,
+                  text: statusOfAllProposals[e.data.uid].text,
                   id: e.data.uid,
                   proposer: e.data.proposer,
-                }}
-              >
-                <Tag
-                  color={(await getStatus(e.data.uid)).color}
-                  text={(await getStatus(e.data.uid)).text}
-                />
+                }}>
+              <Tag
+                color={statusOfAllProposals[e.data.uid].color}
+                text={statusOfAllProposals[e.data.uid].text}
+              />
               </Link>,
             ])
           );
-          console.log("Hooks Updated");
+
           setProposals(table);
           setTotalP(results.length);
         }
@@ -624,7 +640,7 @@ const Home2 = () => {
         }
 
         async function getUserVerify() {
-          console.log("userVerify")
+          console.log("userVerify");
           const functionName = "isMember";
 
           const options = {
@@ -642,7 +658,7 @@ const Home2 = () => {
           const status = statusRaw?.toJSON();
 
           setIsVerified(status);
-          return status
+          return status;
         }
 
         async function getPassRate() {
@@ -703,7 +719,7 @@ const Home2 = () => {
         await getUserVerify();
 
         if (isVerified) {
-          console.log(isVerified)
+          console.log(isVerified);
           await getUserDonation();
           await getDaoBalance();
 
@@ -714,24 +730,23 @@ const Home2 = () => {
       }
       main();
     }
-  }, [isConnected, isVerified, userAddress]);
+  }, [isConnected, isVerified, userAddress, sub]);
 
   return (
     <>
-   
       <div className="content">
-      <div style={{ alignContent: "center" , marginRight: "7px"}}>
-        {!isVerified && (
-         <Link style={{ textDecoration: "none" }} to="/qr">
-          <Button
-            onClick={function noRefCheck() {}}
-            text="Please Verify"
-            theme="primary"
-            size="large"
-          />
-          </Link>
-        )}
-      </div>
+        <div style={{ alignContent: "center", marginRight: "7px" }}>
+          {!isVerified && (
+            <Link style={{ textDecoration: "none" }} to="/qr">
+              <Button
+                onClick={function noRefCheck() {}}
+                text="Please Verify"
+                theme="primary"
+                size="large"
+              />
+            </Link>
+          )}
+        </div>
         <TabList defaultActiveKey={1} tabStyle="bulbUnion">
           <Tab tabKey={1} tabName="DAO">
             <div className="tabContent">
@@ -743,17 +758,17 @@ const Home2 = () => {
                   title="Proposals Created"
                   style={{ width: "200%" }}
                 >
-                  {!isLoading && isConnected && isVerified && 
-                      <div className="extraWidgetInfo">
-                        <div className="extraTitle">Pass Rate</div>
-                        <div className="progress">
-                          <div
-                            className="progressPercentage"
-                            style={{ width: `${passRate}%` }}
-                          ></div>
-                        </div>
+                  {!isLoading && isConnected && isVerified && (
+                    <div className="extraWidgetInfo">
+                      <div className="extraTitle">Pass Rate</div>
+                      <div className="progress">
+                        <div
+                          className="progressPercentage"
+                          style={{ width: `${passRate}%` }}
+                        ></div>
                       </div>
-                    }
+                    </div>
+                  )}
                 </Widget>
 
                 <Widget
@@ -776,22 +791,7 @@ const Home2 = () => {
                   title="Your Donations:"
                 />
               </div>
-              Recent Proposals
-              <div style={{ marginTop: "30px" }}>
-                <Table
-                  isLoading={isDisconnected || isLoading}
-                  id={1}
-                  columnsConfig="10% 50% 20% 20%"
-                  data={proposals}
-                  header={[
-                    <span>ID</span>,
-                    <span>Description</span>,
-                    <span>Required Amount </span>,
-                    <span>Status</span>,
-                  ]}
-                  pageSize={5}
-                />
-              </div>
+              <div>
               {isVerified && isConnected && (
                 <Form
                   buttonConfig={{
@@ -817,16 +817,38 @@ const Home2 = () => {
                       validation: {
                         required: true,
                       },
-                      value: ""
-                    }
+                      value: "",
+                    },
                   ]}
                   onSubmit={(e) => {
                     setSub(true);
-                    createProposal(e.data[0].inputResult, e.data[1].inputResult)
+                    createProposal(
+                      e.data[0].inputResult,
+                      e.data[1].inputResult
+                    );
                   }}
                   title="Create a New Proposal"
                 />
               )}
+              </div>
+
+   
+              <div style={{ marginTop: "30px" }}>
+                <Table
+                  isLoading={isDisconnected || isLoading}
+                  id={1}
+                  columnsConfig="10% 50% 20% 20%"
+                  data={proposals}
+                  header={[
+                    <span>ID</span>,
+                    <span>Description</span>,
+                    <span>Required Amount </span>,
+                    <span>Status</span>,
+                  ]}
+                  pageSize={100}
+                />
+              </div>
+         
             </div>
 
             <div></div>
