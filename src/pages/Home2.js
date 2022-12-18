@@ -5,11 +5,14 @@ import { Link } from "react-router-dom";
 import matic from "../images/Polygon_Faucet.png";
 import { useAccount } from "wagmi";
 import { ethers } from "ethers";
-
+import axios from "axios";
 const Moralis = require("moralis").default;
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
 
 const Home2 = () => {
+
+
+
   console.log("Home Root");
 
   // * DAO Balance
@@ -430,6 +433,8 @@ const Home2 = () => {
 
   // * Generic Functions
 
+
+
   // ? Get Status of a proposal
   async function getStatus(proposalId) {
 
@@ -467,11 +472,37 @@ const Home2 = () => {
 
     const feeData = await signer.getFeeData()
 
+    // * Gas Calculation
+      // get max fees from gas station
+    let maxFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
+    let maxPriorityFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
+    try {
+        const { data } = await axios({
+            method: 'get',
+            url:'https://gasstation-mumbai.matic.today/v2',
+        })
+        maxFeePerGas = ethers.utils.parseUnits(
+            Math.ceil(data.fast.maxFee) + '',
+            'gwei'
+        )
+        maxPriorityFeePerGas = ethers.utils.parseUnits(
+            Math.ceil(data.fast.maxPriorityFee) + '',
+            'gwei'
+        )
+    } catch {
+        // ignore
+    }
+
+
     const daoVerifier = new ethers.Contract(address, ContractABI, signer)
    
     try {
       setLoading(true)
-      const proposalTxn = await daoVerifier.createProposal(description, requiredAmount, {gasLimit: 100000});
+      const proposalTxn = await daoVerifier.createProposal(description, requiredAmount, {
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        gasLimit: "1000000"
+    });
       await proposalTxn.wait()
       setLoading(false)
       setSub(false);
@@ -490,6 +521,7 @@ const Home2 = () => {
   useEffect(() => {
     if (isConnected) {
       async function main() {
+
         async function configMoralis() {
           let moralisInitialized = await Moralis.Core.isStarted;
 
