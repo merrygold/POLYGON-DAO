@@ -234,6 +234,13 @@ const Owner = () => {
       type: "function",
     },
     {
+      inputs: [{ internalType: "address", name: "", type: "address" }],
+      name: "addressToId",
+      outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
       inputs: [{ internalType: "uint256", name: "_id", type: "uint256" }],
       name: "countVotes",
       outputs: [],
@@ -312,6 +319,13 @@ const Owner = () => {
       ],
       name: "proofs",
       outputs: [{ internalType: "bool", name: "", type: "bool" }],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [],
+      name: "proposalId",
+      outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
       stateMutability: "view",
       type: "function",
     },
@@ -431,7 +445,7 @@ const Owner = () => {
   const BaseUrl = "https://mumbai.polygonscan.com/tx/";
 
   // * Setup Chain & Contract Address
-  const address = "0x397D9b8880c91906F794355AdaA81Bd93f69eBdb";
+  const address = "0x80A6B117511c6527E57F25D04D9adfee23Ae1B0E";
 
 
   async function withDrawFunds() {

@@ -7,20 +7,31 @@ import { useAccount } from "wagmi";
 import { ethers } from "ethers";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 const Moralis = require("moralis").default;
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
 
-
 const Home2 = () => {
-  
   console.log("Home Root");
 
   const CloseButton = ({ closeToast }) => (
-   <button style={{ borderRadius:"20px" , backgroundColor:"green" , border:"solid 2px black"}}> <a style={{color: "white" , textDecoration: "none"}} href={polygonScan} onClick={closeToast}>Watch on Scan</a> </button>
+    <button
+      style={{
+        borderRadius: "20px",
+        backgroundColor: "green",
+        border: "solid 2px black",
+      }}
+    >
+      {" "}
+      <a
+        style={{ color: "white", textDecoration: "none" }}
+        href={polygonScan}
+        onClick={closeToast}
+      >
+        Watch on Scan
+      </a>{" "}
+    </button>
   );
-
-  
 
   // * DAO Balance
   const [daoBalance, setDaoBalance] = useState(0);
@@ -45,16 +56,16 @@ const Home2 = () => {
   // * Proposal Form submission
   const [sub, setSub] = useState(false);
 
-   // * DONATION Form submission
-   const [subDonation, setSubDonation] = useState(false);
+  // * DONATION Form submission
+  const [subDonation, setSubDonation] = useState(false);
 
-  const [isOwner, setIsOwner] = useState(false)
+  const [isOwner, setIsOwner] = useState(false);
 
   const { isConnected, isDisconnected, address: userAddress } = useAccount();
 
   // * CONSTANTS
 
-  const BaseUrl = "https://mumbai.polygonscan.com/tx/"
+  const BaseUrl = "https://mumbai.polygonscan.com/tx/";
 
   // * CONTRACT ABI
   const ContractABI = [
@@ -248,6 +259,13 @@ const Home2 = () => {
       type: "function",
     },
     {
+      inputs: [{ internalType: "address", name: "", type: "address" }],
+      name: "addressToId",
+      outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
       inputs: [{ internalType: "uint256", name: "_id", type: "uint256" }],
       name: "countVotes",
       outputs: [],
@@ -326,6 +344,13 @@ const Home2 = () => {
       ],
       name: "proofs",
       outputs: [{ internalType: "bool", name: "", type: "bool" }],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [],
+      name: "proposalId",
+      outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
       stateMutability: "view",
       type: "function",
     },
@@ -443,16 +468,13 @@ const Home2 = () => {
   ];
 
   // * Setup Chain & Contract Address
-  const address = "0x397D9b8880c91906F794355AdaA81Bd93f69eBdb";
+  const address = "0x80A6B117511c6527E57F25D04D9adfee23Ae1B0E";
   const chain = EvmChain.MUMBAI;
 
   // * Generic Functions
 
-
-
   // ? Get Status of a proposal
   async function getStatus(proposalId) {
-
     const functionName = "Proposals";
 
     const proposalOptions = {
@@ -474,140 +496,145 @@ const Home2 = () => {
     if (result.countConducted && result.passed) {
       return {
         [proposalId]: {
-          color: "green", text: "Passed"
-        }
+          color: "green",
+          text: "Passed",
+        },
       };
     } else if (result.countConducted && !result.passed) {
       return {
         [proposalId]: {
-          color: "red", text: "Rejected"
-        }
+          color: "red",
+          text: "Rejected",
+        },
       };
     } else {
       return {
         [proposalId]: {
-          color: "blue", text: "Ongoing"
-        }
-      };;
+          color: "blue",
+          text: "Ongoing",
+        },
+      };
     }
   }
 
-// ? Create Donation
-async function createDonation(donation) {
+  // ? Create Donation
+  async function createDonation(donation) {
+    const signer = new ethers.providers.Web3Provider(
+      window.ethereum
+    ).getSigner();
 
-  const signer = (new ethers.providers.Web3Provider(window.ethereum)).getSigner()
-
-  const daoVerifier = new ethers.Contract(address, ContractABI, signer)
-      // * Gas Calculation
-
-    // get max fees from gas station
-    let maxFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
-    let maxPriorityFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
-    try {
-      const { data } = await axios({
-        method: 'get',
-        url: 'https://gasstation-mumbai.matic.today/v2',
-      })
-      maxFeePerGas = ethers.utils.parseUnits(
-        Math.ceil(data.fast.maxFee) + '',
-        'gwei'
-      )
-      maxPriorityFeePerGas = ethers.utils.parseUnits(
-        Math.ceil(data.fast.maxPriorityFee) + '',
-        'gwei'
-      )
-    } catch {
-      // ignore
-    }
-
-  try {
-  
-    const donateTxn = await daoVerifier.Donate({
-      value:ethers.utils.parseEther(donation),
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      gasLimit: "1000000"
-    });
-
-    // * wait for 2 confirmations after txn get mined!
-    await donateTxn.wait(2);
-
-    const HASH = donateTxn.hash
-    const URL = BaseUrl + HASH
-    setPolygonScan(URL)
-    toast.success("Donation Send Succesfully", {
-      position: "top-right",
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "dark",
-    });
-    setSubDonation(false);
-
-  } catch (error) {
-
-    toast.error('Transaction Failed!', {
-      position: "top-right",
-      autoClose: 5000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-      theme: "dark",
-    });
-    console.log(error)
-
-    setSubDonation(false);
-  }
-}
-
-
-  // ? Create a new proposal
-  async function createProposal(description, requiredAmount) {
-
-    const signer = (new ethers.providers.Web3Provider(window.ethereum)).getSigner()
-
-    const feeData = await signer.getFeeData()
-
+    const daoVerifier = new ethers.Contract(address, ContractABI, signer);
     // * Gas Calculation
+
     // get max fees from gas station
-    let maxFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
-    let maxPriorityFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
+    let maxFeePerGas = ethers.BigNumber.from(40000000000); // fallback to 40 gwei
+    let maxPriorityFeePerGas = ethers.BigNumber.from(40000000000); // fallback to 40 gwei
     try {
       const { data } = await axios({
-        method: 'get',
-        url: 'https://gasstation-mumbai.matic.today/v2',
-      })
+        method: "get",
+        url: "https://gasstation-mumbai.matic.today/v2",
+      });
       maxFeePerGas = ethers.utils.parseUnits(
-        Math.ceil(data.fast.maxFee) + '',
-        'gwei'
-      )
+        Math.ceil(data.fast.maxFee) + "",
+        "gwei"
+      );
       maxPriorityFeePerGas = ethers.utils.parseUnits(
-        Math.ceil(data.fast.maxPriorityFee) + '',
-        'gwei'
-      )
+        Math.ceil(data.fast.maxPriorityFee) + "",
+        "gwei"
+      );
     } catch {
       // ignore
     }
 
-    const daoVerifier = new ethers.Contract(address, ContractABI, signer)
-
     try {
-      const proposalTxn = await daoVerifier.createProposal(description, ethers.utils.parseEther(requiredAmount), {
+      const donateTxn = await daoVerifier.Donate({
+        value: ethers.utils.parseEther(donation),
         maxFeePerGas,
         maxPriorityFeePerGas,
-        gasLimit: "1000000"
+        gasLimit: "1000000",
       });
 
       // * wait for 2 confirmations after txn get mined!
+      await donateTxn.wait(2);
+
+      const HASH = donateTxn.hash;
+      const URL = BaseUrl + HASH;
+      setPolygonScan(URL);
+      toast.success("Donation Send Succesfully", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+      setSubDonation(false);
+    } catch (error) {
+      toast.error("Transaction Failed!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+      console.log(error);
+
+      setSubDonation(false);
+    }
+  }
+
+  // ? Create a new proposal
+  async function createProposal(description, requiredAmount) {
+    const signer = new ethers.providers.Web3Provider(
+      window.ethereum
+    ).getSigner();
+
+    const feeData = await signer.getFeeData();
+
+    // * Gas Calculation
+    // get max fees from gas station
+    let maxFeePerGas = ethers.BigNumber.from(40000000000); // fallback to 40 gwei
+    let maxPriorityFeePerGas = ethers.BigNumber.from(40000000000); // fallback to 40 gwei
+    try {
+      const { data } = await axios({
+        method: "get",
+        url: "https://gasstation-mumbai.matic.today/v2",
+      });
+      maxFeePerGas = ethers.utils.parseUnits(
+        Math.ceil(data.fast.maxFee) + "",
+        "gwei"
+      );
+      maxPriorityFeePerGas = ethers.utils.parseUnits(
+        Math.ceil(data.fast.maxPriorityFee) + "",
+        "gwei"
+      );
+    } catch {
+      // ignore
+    }
+
+    const daoVerifier = new ethers.Contract(address, ContractABI, signer);
+
+    try {
+      const proposalTxn = await daoVerifier.createProposal(
+        description,
+        ethers.utils.parseEther(requiredAmount),
+        {
+          maxFeePerGas,
+          maxPriorityFeePerGas,
+          gasLimit: "1000000",
+        }
+      );
+
+      // * wait for 2 confirmations after txn get mined!
       await proposalTxn.wait(2);
-      const HASH = proposalTxn.hash
-      const url = BaseUrl + HASH
-      setPolygonScan(url)
+      const HASH = proposalTxn.hash;
+      const url = BaseUrl + HASH;
+      setPolygonScan(url);
       toast.success("Proposal Created Succesfully", {
         position: "top-right",
         autoClose: 5000,
@@ -619,10 +646,8 @@ async function createDonation(donation) {
         theme: "dark",
       });
       setSub(false);
-
     } catch (error) {
-
-      toast.error('Transaction Failed!', {
+      toast.error("Transaction Failed!", {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
@@ -632,21 +657,17 @@ async function createDonation(donation) {
         progress: undefined,
         theme: "dark",
       });
-      console.log(error)
+      console.log(error);
 
       setSub(false);
     }
-
-
   }
-
 
   // * For Moralis Configuration (Must be Executed "ONLY ONCE")
 
   useEffect(() => {
     if (isConnected) {
       async function main() {
-
         async function configMoralis() {
           let moralisInitialized = await Moralis.Core.isStarted;
 
@@ -716,30 +737,28 @@ async function createDonation(donation) {
           results.reverse();
           // * Convert uint256 to Ether
           for (let i = 0; i < results.length; i++) {
-
-            results[i].data.requiredAmount = ethers.utils.formatEther(results[i].data.requiredAmount)
+            results[i].data.requiredAmount = ethers.utils.formatEther(
+              results[i].data.requiredAmount
+            );
           }
 
           // * Parse Bad PRoposals
-          const parsedProposals = []
+          const parsedProposals = [];
           for (let i = 0; i < results.length; i++) {
             if (results[i].data.requiredAmount > 0.00001) {
-              parsedProposals.push(results[i])
+              parsedProposals.push(results[i]);
             }
           }
-
 
           // * Get Status of the Proposal
           const statusOfAllProposals = [];
 
           for (let i = 0; i < parsedProposals.length; i++) {
-            let currentId = parsedProposals[i].data.uid
+            let currentId = parsedProposals[i].data.uid;
 
             let statusOfCurrentProposal = await getStatus(currentId);
             statusOfAllProposals.push(statusOfCurrentProposal);
           }
-
-
 
           const table = await Promise.all(
             parsedProposals.map(async (e, index) => [
@@ -764,7 +783,8 @@ async function createDonation(donation) {
                   text: statusOfAllProposals[index][e.data.uid].text,
                   id: e.data.uid,
                   proposer: e.data.proposer,
-                }}>
+                }}
+              >
                 <Tag
                   color={statusOfAllProposals[index][e.data.uid].color}
                   text={statusOfAllProposals[index][e.data.uid].text}
@@ -773,7 +793,7 @@ async function createDonation(donation) {
             ])
           );
 
-          table.reverse()
+          table.reverse();
           setProposals(table);
           setTotalP(results.length);
         }
@@ -805,14 +825,13 @@ async function createDonation(donation) {
           };
           const donationDetails =
             await Moralis.EvmApi.utils.runContractFunction(options);
-            const result = donationDetails?.toJSON()
-  
+          const result = donationDetails?.toJSON();
+
           const donation = ethers.utils.formatEther(result.toString());
           setDonation(donation);
         }
 
         async function getUserVerify() {
-
           const ownerFunc = "DAOowner";
 
           const ownerOpt = {
@@ -828,10 +847,9 @@ async function createDonation(donation) {
           const ownerAddress = ownerStatus?.toJSON();
 
           if (ownerAddress == userAddress) {
-            setIsOwner(true)
-            setIsMember(true)
-          }
-          else {
+            setIsOwner(true);
+            setIsMember(true);
+          } else {
             const functionName = "isMember";
 
             const options = {
@@ -910,7 +928,6 @@ async function createDonation(donation) {
         await getUserVerify();
 
         if (isMember) {
-
           await getUserDonation();
           await getDaoBalance();
 
@@ -921,7 +938,7 @@ async function createDonation(donation) {
       }
       main();
     }
-  }, [isConnected, isMember, userAddress, sub , subDonation]);
+  }, [isConnected, isMember, userAddress, sub, subDonation]);
 
   return (
     <>
@@ -937,33 +954,27 @@ async function createDonation(donation) {
                   marginTop: "-30px",
                 }}
               >
-
-
-
-
                 {!isMember && (
                   <Link style={{ textDecoration: "none" }} to="/qr">
                     <Button text="Please Verify" theme="primary" size="large" />
                   </Link>
                 )}
 
-              {isConnected && isOwner && (
-                  <Link style={{ textDecoration: "none", marginLeft: "30px" }} to="/owner">
+                {isConnected && isOwner && (
+                  <Link
+                    style={{ textDecoration: "none", marginLeft: "30px" }}
+                    to="/owner"
+                  >
                     <Tag
                       color="purple"
                       onCancelClick={function noRefCheck() {}}
                       text="Owner Panel"
                       tone="dark"
                       fontSize="20px"
-                      style ={{padding: "15px" , marginRight: "5px"}}
+                      style={{ padding: "15px", marginRight: "5px" }}
                     />
                   </Link>
                 )}
-
-
-
-
-
 
                 {isConnected && isOwner ? (
                   <Tag
