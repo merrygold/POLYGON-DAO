@@ -506,7 +506,7 @@ const Owner = () => {
         progress: undefined,
         theme: "dark",
       });
-      console.log(error);
+    
 
       setWithDrawLoading(false);
     }
@@ -571,7 +571,7 @@ const Owner = () => {
         progress: undefined,
         theme: "dark",
       });
-      console.log(error);
+
 
       setSubNewMember(false);
     }
@@ -636,7 +636,7 @@ const Owner = () => {
         progress: undefined,
         theme: "dark",
       });
-      console.log(error);
+      
 
       setSubRevokeMember(false);
     }

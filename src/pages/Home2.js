@@ -12,7 +12,7 @@ const Moralis = require("moralis").default;
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
 
 const Home2 = () => {
-  console.log("Home Root");
+
 
   const CloseButton = ({ closeToast }) => (
     <button
@@ -582,7 +582,7 @@ const Home2 = () => {
         progress: undefined,
         theme: "dark",
       });
-      console.log(error);
+   
 
       setSubDonation(false);
     }
@@ -656,7 +656,7 @@ const Home2 = () => {
         progress: undefined,
         theme: "dark",
       });
-      console.log(error);
+      
 
       setSub(false);
     }
@@ -671,7 +671,7 @@ const Home2 = () => {
           let moralisInitialized = await Moralis.Core.isStarted;
 
           if (!moralisInitialized) {
-            console.log("Moralis Configured");
+         
             await Moralis.start({
               apiKey:
                 "zLYFqOyS9Mc6G8jzDjx3PEPj8WrcktAYrdyt3QTf2ogr4tU5kUSSE1xsTkF4Idyn",
@@ -682,7 +682,7 @@ const Home2 = () => {
         }
 
         async function getProposals() {
-          console.log("Get Proposals");
+        
 
           // * Getting ProposalCreated Event
           const Proposal_Created_Event_ABI = {
@@ -907,7 +907,7 @@ const Home2 = () => {
           );
           const eventArray = responseEvents?.toJSON().result;
 
-          console.log(eventArray);
+        
 
           let won = 0;
           //   * Getting Proposal Details
@@ -1086,7 +1086,7 @@ const Home2 = () => {
                         );
                         // e.preventDefault();
                       } catch (error) {
-                        console.log(error);
+                   
                       }
                     }}
                     title="Create a New Proposal"
@@ -1131,7 +1131,7 @@ const Home2 = () => {
                         );
                         // e.preventDefault();
                       } catch (error) {
-                        console.log(error);
+                 
                       }
                     }}
                     title="Create a New Proposal"
