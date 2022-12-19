@@ -3,7 +3,8 @@ import "./pages.css";
 import { Tag, Widget, Blockie, Tooltip, Form, Table, Button } from "web3uikit";
 import { Link } from "react-router-dom";
 import { useLocation } from "react-router";
-
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import { ethers } from "ethers";
 import { ChevronLeft, Matic, CrossCircle } from "@web3uikit/icons";
 
@@ -12,24 +13,47 @@ const Moralis = require("moralis").default;
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
 
 const Proposal = () => {
+
+
   const { state: proposalDetails } = useLocation();
   const [latestVote, setLatestVote] = useState();
   const [percUp, setPercUp] = useState(0);
   const [percDown, setPercDown] = useState(0);
   const [votes, setVotes] = useState([]);
+  
+
+  // * User Voting status
+  const [hasVoted, setHasVoted] = useState(false)
+
+  // * Proposal Status
+  const [countDone, setCountDone] = useState(false)
+
+  // * Voting Status
   const [sub, setSub] = useState(false);
 
   // * Counting Status
   const [counting, setCounting] = useState(false)
 
-    // * Polygon Scan URL
+  // * Loading Data
+  const [loading, setLoading] = useState(false)
+
+  // ** TOASTER
+  // * Polygon Scan URL
   const [polygonScan, setPolygonScan] = useState("");
+
+  const CloseButton = ({ closeToast }) => (
+    <button style={{ borderRadius:"20px" , backgroundColor:"green" , border:"solid 2px black"}}> <a style={{color: "white" , textDecoration: "none"}} href={polygonScan} onClick={closeToast}>Watch on Scan</a> </button>
+   );
+
+   const BaseUrl = "https://mumbai.polygonscan.com/tx/"
 
 
   // * Check if isOwner
   const [isOwner, setIsOwner] = useState(false);
+
   // * Check if isMember
   const [isMember, setIsMember] = useState(false);
+
   // * Deadline of the Proposal
   const [deadline, setDeadline] = useState(false)
 
@@ -37,8 +61,6 @@ const Proposal = () => {
 
   // * Get Current User
   const { isConnected, isDisconnected, address: userAddress } = useAccount();
-
-
 
   // * CONTRACT ABI
   const ContractABI = [
@@ -432,20 +454,34 @@ const Proposal = () => {
 
   useEffect(() => {
     if (isConnected) {
+      window.scrollTo(0, 100)
+      if (deadline == true) {
+        window.scrollTo(0, 100)
+      } 
+      else {
+        window.scrollTo(0, 70)
+      }
+      
       async function main() {
         async function configMoralis() {
           let moralisInitialized = await Moralis.Core.isStarted;
 
-          if (!moralisInitialized) {
-            console.log("Moralis Configured");
-            await Moralis.start({
-              apiKey:
-                "zLYFqOyS9Mc6G8jzDjx3PEPj8WrcktAYrdyt3QTf2ogr4tU5kUSSE1xsTkF4Idyn",
-              // "0KEpH3iOcb7NF49r9hh40AvjYWeFjxfAY15Zf7mzayVEfM9UW1Bt8ZJpcZbV1N2C",
-              // ...and any other configuration
-            });
+          try {
+            if (!moralisInitialized) {
+              console.log("Moralis Configured");
+              await Moralis.start({
+                apiKey:
+                  "zLYFqOyS9Mc6G8jzDjx3PEPj8WrcktAYrdyt3QTf2ogr4tU5kUSSE1xsTkF4Idyn",
+                // "0KEpH3iOcb7NF49r9hh40AvjYWeFjxfAY15Zf7mzayVEfM9UW1Bt8ZJpcZbV1N2C",
+                // ...and any other configuration
+              });
+            }
+          } catch (error) {
+            console.log(error)
           }
+          
         }
+        // ? Get Votes of current Proposal
         async function getVotes() {
           // * Getting ProposalCreated Event
           const voteEventABI = {
@@ -503,10 +539,14 @@ const Proposal = () => {
           const EveryProposalVotes = responseEvents?.toJSON().result;
 
           const results = [];
-          console.log(EveryProposalVotes);
 
           for (let i = 0; i < EveryProposalVotes.length; i++) {
-            console.log(EveryProposalVotes[i].data.proposal);
+            if (
+              Number(EveryProposalVotes[i].data.proposal) == proposalDetails.id && Number(EveryProposalVotes[i].data.voter) == userAddress
+            ) {
+              setHasVoted(true)
+            }
+
             if (
               Number(EveryProposalVotes[i].data.proposal) == proposalDetails.id
             ) {
@@ -514,8 +554,10 @@ const Proposal = () => {
             }
           }
 
-          // * Get Latest first
-          results.reverse();
+          for (let i = 0; i < results.length; i++) {
+            console.log(results[i])
+           
+          }
 
           if (results.length > 0) {
             setLatestVote(results[0].data);
@@ -539,7 +581,6 @@ const Proposal = () => {
 
           const votesDirection = results.map((e) => [
             e.data.voter,
-
             e.data.votedFor ? (
               <Matic fontSize="24px" />
             ) : (
@@ -550,6 +591,7 @@ const Proposal = () => {
           setVotes(votesDirection);
         }
 
+        // ? Get Verification of Current User
         async function getUserVerify() {
           const ownerFunc = "DAOowner";
 
@@ -568,6 +610,7 @@ const Proposal = () => {
           if (ownerAddress == userAddress) {
             setIsOwner(true);
             setIsMember(true);
+            console.log(ownerAddress == userAddress)
           } else {
             setIsOwner(false)
             const functionName = "isMember";
@@ -587,6 +630,7 @@ const Proposal = () => {
             const status = statusRaw?.toJSON();
 
             setIsMember(status);
+            console.log(status)
           }
         }
 
@@ -614,12 +658,15 @@ const Proposal = () => {
           let color = ''
           let text = ''
           if (result.countConducted && result.passed) {
+            setCountDone(true)
             color = 'green'
             text = 'Passed'
           } else if (result.countConducted && !result.passed) {
+            setCountDone(true)
             color = 'red'
             text = 'Rejected'
           } else {
+            setCountDone(false)
             color = 'blue'
             text = 'Ongoing'
           }
@@ -651,17 +698,20 @@ const Proposal = () => {
             setDeadline(true)
           }
         }
-
+        setLoading(true)
         await configMoralis();
         await getUserVerify();
-        await getDeadline(proposalDetails.id);
-        await getStatus(proposalDetails.id)
-        await getVotes();
+        
 
+          await getDeadline(proposalDetails.id);
+          await getStatus(proposalDetails.id)
+          await getVotes();
+          setLoading(false)
+        
       }
       main();
     }
-  }, [isConnected, sub, userAddress]);
+  }, [isConnected, userAddress, sub, counting]);
 
   async function castVote(upDown) {
     const signer = new ethers.providers.Web3Provider(
@@ -680,7 +730,7 @@ const Proposal = () => {
       const HASH = voteTxn.hash
       const url = BaseUrl + HASH
       setPolygonScan(url)
-      toast.success("Proposal Created Succesfully", {
+      toast.success("Vote Casted Succesfully", {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
@@ -716,9 +766,8 @@ const Proposal = () => {
     const daoVerifier = new ethers.Contract(address, ContractABI, signer)
 
     const countTxn = await daoVerifier.countVotes(id)
-    setCounting(true)
-    await countTxn.wait()
-    setSub(false)
+    await countTxn.wait(2)
+
     setCounting(false)
   }
 
@@ -760,13 +809,13 @@ const Proposal = () => {
 
               </div>
             }
-            {isOwner && deadline &&
+            {isOwner && deadline && !countDone &&
               <div className="countButton">
                 <Button
-                  disabled={!isOwner || counting}
+                  disabled={!isOwner || counting || loading}
                   color="blue"
                   onClick={() => {
-                    setSub(true)
+                    setCounting(true)
                     countVotes(proposalDetails.id)
                   }}
                   text={!counting ? "Count Votes" : "Counting..."}
@@ -775,9 +824,19 @@ const Proposal = () => {
                 />
               </div>
             }
+
+            {countDone && 
+              <div className="countButton">
+                <Button
+                  disabled={true}
+                  color="blue"
+                  text={"Count Done!"}
+                  theme="colored"
+                />
+              </div>
+            }
+
           </div>
-
-
 
           {latestVote && (
             <div className="widgets">
@@ -805,6 +864,7 @@ const Proposal = () => {
               </Widget>
             </div>
           )}
+
           <div className="votesDiv">
             <Table
               style={{ width: "60%" }}
@@ -815,7 +875,7 @@ const Proposal = () => {
             />
 
             <Form
-              isDisabled={proposalDetails.text !== "Ongoing"}
+              isDisabled={deadline || hasVoted || loading}
               style={{
                 width: "30%",
                 height: "250px",
@@ -849,7 +909,10 @@ const Proposal = () => {
               }}
               title="Cast Vote"
             />
+                 
           </div>
+
+
         </div>
       }
       <></>
