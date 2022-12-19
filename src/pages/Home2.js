@@ -980,6 +980,7 @@ const Home2 = () => {
                     color="green"
                     text="DAO Owner"
                     fontSize="25px"
+                    tone="dark"
                     width="fit-content"
                     style={{ padding: "10px 15px", marginLeft: "20px" }}
                   />
@@ -997,7 +998,14 @@ const Home2 = () => {
                   )
                 )}
               </div>
-              Governance Overview
+              <Tag
+                      color="purple"
+                      text="Ghost DAO"
+                      fontSize="25px"
+                      // tone="dark"
+                      width="fit-content"
+                      style={{ padding: "15px 15px" }}
+                    /> 
               <div className="widgets">
                 <Widget
                   isLoading={isDisconnected || isLoading}
