@@ -25,9 +25,8 @@ const Home2 = () => {
   // * DAO Balance
   const [daoBalance, setDaoBalance] = useState(0);
 
-  // * Polygon Scan URL
+  // * DAO Balance
   const [polygonScan, setPolygonScan] = useState("");
-
   // * Donations of current user
   const [donation, setDonation] = useState(0);
   // * Check if User verified or Not
@@ -43,8 +42,11 @@ const Home2 = () => {
 
   const [isLoading, setLoading] = useState(false);
 
-  // * Form submission
+  // * Proposal Form submission
   const [sub, setSub] = useState(false);
+
+   // * DONATION Form submission
+   const [subDonation, setSubDonation] = useState(false);
 
   const [isOwner, setIsOwner] = useState(false)
 
@@ -490,6 +492,83 @@ const Home2 = () => {
     }
   }
 
+// ? Create Donation
+async function createDonation(donation) {
+  console.log(donation)
+  const signer = (new ethers.providers.Web3Provider(window.ethereum)).getSigner()
+
+  const daoVerifier = new ethers.Contract(address, ContractABI, signer)
+      // * Gas Calculation
+
+
+
+
+    // get max fees from gas station
+    let maxFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
+    let maxPriorityFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
+    try {
+      const { data } = await axios({
+        method: 'get',
+        url: 'https://gasstation-mumbai.matic.today/v2',
+      })
+      maxFeePerGas = ethers.utils.parseUnits(
+        Math.ceil(data.fast.maxFee) + '',
+        'gwei'
+      )
+      maxPriorityFeePerGas = ethers.utils.parseUnits(
+        Math.ceil(data.fast.maxPriorityFee) + '',
+        'gwei'
+      )
+    } catch {
+      // ignore
+    }
+
+
+  try {
+  
+    const donateTxn = await daoVerifier.Donate({
+      value:ethers.utils.parseEther(donation),
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+      gasLimit: "1000000"
+    });
+    await donateTxn.wait(2);
+    const HASH = donateTxn.hash
+    const URL = BaseUrl + HASH
+    setPolygonScan(URL)
+    toast.success("Donation Send Succesfully", {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+    });
+    setSubDonation(false);
+
+  } catch (error) {
+
+    toast.error('Transaction Failed!', {
+      position: "top-right",
+      autoClose: 5000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+    });
+    console.log(error)
+
+    setSubDonation(false);
+  }
+
+
+}
+
+
   // ? Create a new proposal
   async function createProposal(description, requiredAmount) {
 
@@ -522,13 +601,12 @@ const Home2 = () => {
     const daoVerifier = new ethers.Contract(address, ContractABI, signer)
 
     try {
-      setLoading(true)
       const proposalTxn = await daoVerifier.createProposal(description, ethers.utils.parseEther(requiredAmount), {
         maxFeePerGas,
         maxPriorityFeePerGas,
         gasLimit: "1000000"
       });
-      await proposalTxn.wait();
+      await proposalTxn.wait(2);
       const HASH = proposalTxn.hash
       const url = BaseUrl + HASH
       setPolygonScan(url)
@@ -542,7 +620,6 @@ const Home2 = () => {
         progress: undefined,
         theme: "dark",
       });
-      setLoading(false)
       setSub(false);
 
     } catch (error) {
@@ -558,7 +635,7 @@ const Home2 = () => {
         theme: "dark",
       });
       console.log(error)
-      setLoading(false)
+
       setSub(false);
     }
 
@@ -730,11 +807,12 @@ const Home2 = () => {
           };
           const donationDetails =
             await Moralis.EvmApi.utils.runContractFunction(options);
-          const result = Number(
-            ethers.utils.formatEther(donationDetails?.toJSON())
-          ).toFixed(4);
-          console.log(result);
-          setDonation(result);
+            const result = donationDetails?.toJSON()
+            console.log(result)
+            // !!!!!!!!!
+          const donation = result/10*18;
+          console.log(donation);
+          setDonation(donation);
         }
 
         async function getUserVerify() {
@@ -847,30 +925,50 @@ const Home2 = () => {
       }
       main();
     }
-  }, [isConnected, isMember, userAddress]);
+  }, [isConnected, isMember, userAddress, sub , subDonation]);
 
   return (
-    <> 
-      <ToastContainer  closeButton={CloseButton}/>
+    <>
+      <ToastContainer closeButton={CloseButton} />
       <div className="content">
-
         <TabList defaultActiveKey={1} tabStyle="bulbUnion">
           <Tab tabKey={1} tabName="DAO">
-
             <div className="tabContent">
-
-              <div style={{ display: "flex", justifyContent: "center", marginTop: "-30px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: "-30px",
+                }}
+              >
                 {!isMember && (
                   <Link style={{ textDecoration: "none" }} to="/qr">
-                    <Button
-                      onClick={function noRefCheck() { }}
-                      text="Please Verify"
-                      theme="primary"
-                      size="large"
-                    />
+                    <Button text="Please Verify" theme="primary" size="large" />
                   </Link>
                 )}
-              </div> Governance Overview
+                {isConnected && isOwner ? (
+                  <Tag
+                    color="green"
+                    text="DAO Owner"
+                    fontSize="25px"
+                    width="fit-content"
+                    style={{ padding: "10px 15px" }}
+                  />
+                ) : (
+                  isConnected &&
+                  isMember && (
+                    <Tag
+                      color="purple"
+                      text="Verified Member"
+                      fontSize="25px"
+                      tone="dark"
+                      width="fit-content"
+                      style={{ padding: "10px 15px" }}
+                    />
+                  )
+                )}
+              </div>
+              Governance Overview
               <div className="widgets">
                 <Widget
                   isLoading={isDisconnected || isLoading}
@@ -896,7 +994,6 @@ const Home2 = () => {
                   info={daoBalance}
                   title="DAO Treasury Balance"
                 >
-
                   <img
                     style={{ marginTop: "30px" }}
                     width={"25px"}
@@ -913,8 +1010,7 @@ const Home2 = () => {
                 />
               </div>
               <div>
-
-                {isMember && isConnected && !isLoading &&
+                {isMember && isConnected && !sub && (
                   <Form
                     isDisabled={isLoading}
                     buttonConfig={{
@@ -945,22 +1041,77 @@ const Home2 = () => {
                       },
                     ]}
                     onSubmit={(e) => {
-                      setSub(true)
-                      createProposal(
-                        e.data[0].inputResult,
-                        e.data[1].inputResult
-                      );
+                      try {
+                        setSub(true);
+                        createProposal(
+                          e.data[0].inputResult,
+                          e.data[1].inputResult
+                        );
+                        // e.preventDefault();
+                      } catch (error) {
+                        console.log(error);
+                      }
                     }}
                     title="Create a New Proposal"
                   />
+                )}
 
-                }
+                {/* Substitue Form */}
+                {sub && (
+                  <Form
+                    isDisabled={true}
+                    buttonConfig={{
+                      text: "Submitting...",
+                      theme: "secondary",
+                    }}
+                    data={[
+                      {
+                        inputWidth: "100%",
+                        name: "Description",
+                        type: "text",
+                        validation: {
+                          required: true,
+                        },
+                        value: "",
+                      },
+                      {
+                        inputWidth: "20%",
+                        name: "Required Amount",
+                        type: "number",
+                        validation: {
+                          characterMaxLength: 5,
+                          required: true,
+                        },
+                        value: "",
+                      },
+                    ]}
+                    onSubmit={(e) => {
+                      try {
+                        setSub(true);
+                        createProposal(
+                          e.data[0].inputResult,
+                          e.data[1].inputResult
+                        );
+                        // e.preventDefault();
+                      } catch (error) {
+                        console.log(error);
+                      }
+                    }}
+                    title="Create a New Proposal"
+                  />
+                )}
               </div>
-
-
               <div style={{ marginTop: "30px" }}>
-                <div style={{ color: "#68738D", marginBottom: "20px", marginTop: "30px", alignContent: "center" }}>
-                  Recent Proposals</div>
+                <div
+                  style={{
+                    color: "#68738D",
+                    marginBottom: "20px",
+                    marginTop: "30px",
+                    alignContent: "center",
+                  }}
+                >
+                  Recent Proposals
+                </div>
                 <Table
                   isLoading={isDisconnected || isLoading}
                   id={1}
@@ -975,13 +1126,11 @@ const Home2 = () => {
                   pageSize={6}
                 />
               </div>
-
             </div>
 
             <div></div>
           </Tab>
           <Tab tabKey={2} tabName="Fund DAO">
-
             <div className="DAO">
               <Widget
                 isLoading={isDisconnected || isLoading}
@@ -989,11 +1138,11 @@ const Home2 = () => {
                 title="Your Donations:"
               />
             </div>
-            {isMember && isConnected && !isLoading &&
+            {isMember && isConnected && !subDonation && (
               <Form
                 isDisabled={isLoading}
                 buttonConfig={{
-                  isLoading: sub,
+                  isLoading: subDonation,
                   loadingText: "Sending...",
                   text: "FUND",
                   theme: "secondary",
@@ -1011,20 +1160,45 @@ const Home2 = () => {
                   },
                 ]}
                 onSubmit={(e) => {
-                  setSub(true)
+                  setSubDonation(true);
+                  createDonation(e.data[0].inputResult);
                 }}
                 title="FUND OUR DAO"
               />
-            }
+            )}
 
-
-
+            {/* Substitue Form */}
+            {subDonation && (
+              <Form
+                isDisabled={true}
+                buttonConfig={{
+                  text: "Sending...",
+                  theme: "secondary",
+                }}
+                data={[
+                  {
+                    inputWidth: "20%",
+                    name: "Amount you wana FUND",
+                    type: "number",
+                    validation: {
+                      characterMaxLength: 5,
+                      required: true,
+                    },
+                    value: "",
+                  },
+                ]}
+                onSubmit={(e) => {
+                  setSubDonation(true);
+                  createDonation(e.data[0].inputResult);
+                }}
+                title="FUND OUR DAO"
+              />
+            )}
           </Tab>
           <Tab tabKey={3} tabName="Docs"></Tab>
         </TabList>
       </div>
       <div className="voting"></div>
-
     </>
   );
 };
