@@ -37,10 +37,10 @@ const Owner = () => {
   // * State for New Member
   const [subNewMember, setSubNewMember] = useState(false);
 
-   // * State for Revoke Member
-   const [subRevokeMember, setSubRevokeMember] = useState(false);
+  // * State for Revoke Member
+  const [subRevokeMember, setSubRevokeMember] = useState(false);
   // * Using Wagmi Hook
-  const { isConnected} = useAccount();
+  const { isConnected } = useAccount();
 
   // * CONTRACT ABI
   const ContractABI = [
@@ -447,7 +447,6 @@ const Owner = () => {
   // * Setup Chain & Contract Address
   const address = "0x80A6B117511c6527E57F25D04D9adfee23Ae1B0E";
 
-
   async function withDrawFunds() {
     const signer = new ethers.providers.Web3Provider(
       window.ethereum
@@ -578,7 +577,6 @@ const Owner = () => {
     }
   }
 
-
   async function rewokeMember(revokeAddress) {
     const signer = new ethers.providers.Web3Provider(
       window.ethereum
@@ -649,18 +647,15 @@ const Owner = () => {
       <ToastContainer closeButton={CloseButton} />
       <div className="contentProposal">
         <div className="qr-flex ">
-      
           <div className="flex qr_margin">
+            <Button
+              onClick={withDrawFunds}
+              text="Withdraw"
+              theme="primary"
+              size="large"
+              disabled={withdrawLoading}
+            />
 
-
-          <Button
-          onClick={withDrawFunds}
-          text="Withdraw"
-          theme="primary"
-          size="large"
-          disabled={withdrawLoading}
-        />
-          
             <div className="margin-30">
               <div>
                 {isConnected && !subNewMember && (
@@ -720,9 +715,7 @@ const Owner = () => {
               </div>
             </div>
 
-          
-
-            <div  className="margin-30">
+            <div className="margin-30">
               <div>
                 {isConnected && !subRevokeMember && (
                   <Form
@@ -782,7 +775,6 @@ const Owner = () => {
             </div>
           </div>
         </div>
-    
       </div>
     </>
   );
