@@ -26,13 +26,15 @@ const Proposal = () => {
   const [isOwner, setIsOwner] = useState(false);
   // * Check if isMember
   const [isMember, setIsMember] = useState(false);
+  // * Deadline of the Proposal
+  const [deadline, setDeadline] = useState(false)
 
-    const [status, setStatus] = useState({})
+  const [status, setStatus] = useState({})
 
   // * Get Current User
   const { isConnected, isDisconnected, address: userAddress } = useAccount();
 
-  
+
 
   // * CONTRACT ABI
   const ContractABI = [
@@ -585,54 +587,81 @@ const Proposal = () => {
         }
 
         // ? Get Status of a proposal
-    async function getStatus(proposalId) {
+        async function getStatus(proposalId) {
 
-    const functionName = "Proposals";
+          const functionName = "Proposals";
 
-    const proposalOptions = {
-      abi: ContractABI,
-      functionName: functionName,
-      address: address,
-      chain: chain,
-      params: {
-        "": proposalId,
-      },
-    };
+          const proposalOptions = {
+            abi: ContractABI,
+            functionName: functionName,
+            address: address,
+            chain: chain,
+            params: {
+              "": proposalId,
+            },
+          };
 
-    const proposalDetails = await Moralis.EvmApi.utils.runContractFunction(
-      proposalOptions
-    );
+          const proposalDetails = await Moralis.EvmApi.utils.runContractFunction(
+            proposalOptions
+          );
 
-    const result = proposalDetails?.toJSON();
+          const result = proposalDetails?.toJSON();
 
-    let color = ''
-    let text = ''
-    if (result.countConducted && result.passed) {
-        color = 'green'
-        text = 'Passed'
-    } else if (result.countConducted && !result.passed) {
-        color = 'red'
-        text = 'Rejected'
-    } else {
-        color = 'blue'
-        text = 'Ongoing'
-    }
-    setStatus({color: color, text: text})
+          let color = ''
+          let text = ''
+          if (result.countConducted && result.passed) {
+            color = 'green'
+            text = 'Passed'
+          } else if (result.countConducted && !result.passed) {
+            color = 'red'
+            text = 'Rejected'
+          } else {
+            color = 'blue'
+            text = 'Ongoing'
+          }
+          setStatus({ color: color, text: text })
         }
-        
+
+        // ? Get Deadline of a Proposal
+        async function getDeadline(proposalId) {
+          const functionName = "Proposals";
+
+          const proposalOptions = {
+            abi: ContractABI,
+            functionName: functionName,
+            address: address,
+            chain: chain,
+            params: {
+              "": proposalId,
+            },
+          };
+          const proposalDetails = await Moralis.EvmApi.utils.runContractFunction(
+            proposalOptions
+          );
+          const proposal = proposalDetails?.toJSON();
+
+          const provider = (new ethers.providers.Web3Provider(window.ethereum))
+          const currentBlockNum = await provider.getBlockNumber()
+
+          if (proposal.deadline <= currentBlockNum) {
+            setDeadline(true)
+          }
+        }
+
         await configMoralis();
         await getUserVerify();
+        await getDeadline(proposalDetails.id);
         await getStatus(proposalDetails.id)
         await getVotes();
-      
-    }
+
+      }
       main();
     }
   }, [isConnected, sub, userAddress]);
 
   async function castVote(upDown) {
     const signer = new ethers.providers.Web3Provider(
-window.ethereum).getSigner();
+      window.ethereum).getSigner();
 
     const daoVerifier = new ethers.Contract(address, ContractABI, signer);
 
@@ -651,12 +680,12 @@ window.ethereum).getSigner();
   }
 
   async function countVotes(id) {
-    
+
     const signer = (new ethers.providers.Web3Provider(window.ethereum)).getSigner()
 
     const daoVerifier = new ethers.Contract(address, ContractABI, signer)
-   
-    const countTxn =  await daoVerifier.countVotes(id)
+
+    const countTxn = await daoVerifier.countVotes(id)
     setCounting(true)
     await countTxn.wait()
     setSub(false)
@@ -665,115 +694,132 @@ window.ethereum).getSigner();
 
   return (
     <>
-    {isConnected && isMember && 
-      <div className="contentProposal">
-        <div className="proposal">
-          <Link className="linkBackHome" to="/">
-            <div className="backHome">
-              <ChevronLeft fill="#ffffff" fontSize="20px" />
-              Overview
-            </div>
-          </Link>
+      {isConnected && isMember &&
+        <div className="contentProposal">
+          <div className="proposal">
+            <Link className="linkBackHome" to="/">
+              <div className="backHome">
+                <ChevronLeft fill="#ffffff" fontSize="20px" />
+                Overview
+              </div>
+            </Link>
 
-          <div>{proposalDetails.description}</div>
-          <div className="proposalOverview">
-            <Tag color={status.color} text={status.text} />
-            <div className="proposer">
-              <span>Proposed By </span>
-              <Tooltip content={proposalDetails.proposer}>
-                <Blockie seed={proposalDetails.proposer} />
-              </Tooltip>
+            <div>{proposalDetails.description}</div>
+            <div className="proposalOverview">
+              <Tag color={status.color} text={status.text} />
+              <div className="proposer">
+                <span>Proposed By </span>
+                <Tooltip content={proposalDetails.proposer}>
+                  <Blockie seed={proposalDetails.proposer} />
+                </Tooltip>
+              </div>
             </div>
           </div>
-        </div>
-        
-        {isOwner &&
-        <div className="countButton">
-        <Button
-          disabled={!isOwner || counting}
-          color="blue"
-          onClick={ () => { 
-            setSub(true)
-            countVotes(proposalDetails.id)}}
-          text= {!counting ? "Count Votes" : "Counting..."}
-          theme="colored"
-          loadingText="Counting"
-        />
-        </div>
-        }
-        
-        {latestVote && (
-          <div className="widgets">
-            <Widget info={latestVote.votesUp} title="Votes For">
-              <div className="extraWidgetInfo">
-                <div className="extraTitle">{percUp}%</div>
-                <div className="progress">
-                  <div
-                    className="progressPercentage"
-                    style={{ width: `${percUp}%` }}
-                  ></div>
-                </div>
-              </div>
-            </Widget>
-            <Widget info={latestVote.votesDown} title="Votes Against">
-              <div className="extraWidgetInfo">
-                <div className="extraTitle">{percDown}%</div>
-                <div className="progress">
-                  <div
-                    className="progressPercentage"
-                    style={{ width: `${percDown}%` }}
-                  ></div>
-                </div>
-              </div>
-            </Widget>
-          </div>
-        )}
-        <div className="votesDiv">
-          <Table
-            style={{ width: "60%" }}
-            columnsConfig="90% 10%"
-            data={votes}
-            header={[<span>Address</span>, <span>Vote</span>]}
-            pageSize={5}
-          />
 
-          <Form
-            isDisabled={proposalDetails.text !== "Ongoing"}
-            style={{
-              width: "30%",
-              height: "250px",
-              border: "1px solid rgba(6, 158, 252, 0.2)",
-            }}
-            buttonConfig={{
-              isLoading: sub,
-              loadingText: "Casting Vote",
-              text: "Vote",
-              theme: "secondary",
-            }}
-            data={[
-              {
-                inputWidth: "100%",
-                name: "Cast Vote",
-                options: ["For", "Against"],
-                type: "radios",
-                validation: {
-                  required: true,
+
+          <div className="buttons-Wrapper">
+            {deadline &&
+              <div className="deadlineButton">
+                <Button
+                  color="red"
+                  text={`Deadline: ${deadline}`}
+                  theme="colored"
+                  loadingText="Calculating"
+                />
+
+              </div>
+            }
+            {isOwner && deadline &&
+              <div className="countButton">
+                <Button
+                  disabled={!isOwner || counting}
+                  color="blue"
+                  onClick={() => {
+                    setSub(true)
+                    countVotes(proposalDetails.id)
+                  }}
+                  text={!counting ? "Count Votes" : "Counting..."}
+                  theme="colored"
+                  loadingText="Counting"
+                />
+              </div>
+            }
+          </div>
+
+
+
+          {latestVote && (
+            <div className="widgets">
+              <Widget info={latestVote.votesUp} title="Votes For">
+                <div className="extraWidgetInfo">
+                  <div className="extraTitle">{percUp}%</div>
+                  <div className="progress">
+                    <div
+                      className="progressPercentage"
+                      style={{ width: `${percUp}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </Widget>
+              <Widget info={latestVote.votesDown} title="Votes Against">
+                <div className="extraWidgetInfo">
+                  <div className="extraTitle">{percDown}%</div>
+                  <div className="progress">
+                    <div
+                      className="progressPercentage"
+                      style={{ width: `${percDown}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </Widget>
+            </div>
+          )}
+          <div className="votesDiv">
+            <Table
+              style={{ width: "60%" }}
+              columnsConfig="90% 10%"
+              data={votes}
+              header={[<span>Address</span>, <span>Vote</span>]}
+              pageSize={5}
+            />
+
+            <Form
+              isDisabled={proposalDetails.text !== "Ongoing"}
+              style={{
+                width: "30%",
+                height: "250px",
+                border: "1px solid rgba(6, 158, 252, 0.2)",
+              }}
+              buttonConfig={{
+                isLoading: sub,
+                loadingText: "Casting Vote",
+                text: "Vote",
+                theme: "secondary",
+              }}
+              data={[
+                {
+                  inputWidth: "100%",
+                  name: "Cast Vote",
+                  options: ["For", "Against"],
+                  type: "radios",
+                  validation: {
+                    required: true,
+                  },
                 },
-              },
-            ]}
-            onSubmit={(e) => {
-              if (e.data[0].inputResult[0] === "For") {
-                console.log("For");
-                castVote(true);
-              } else {
-                castVote(false);
-              }
-              setSub(true);
-            }}
-            title="Cast Vote"
-          />
+              ]}
+              onSubmit={(e) => {
+                if (e.data[0].inputResult[0] === "For") {
+                  console.log("For");
+                  castVote(true);
+                } else {
+                  castVote(false);
+                }
+                setSub(true);
+              }}
+              title="Cast Vote"
+            />
+          </div>
         </div>
-      </div>
       }
       <></>
       <div className="voting"></div>

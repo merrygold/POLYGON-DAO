@@ -21,6 +21,11 @@
     left: 20vw;
     position: absolute;
   }
+
+  .DAO {
+  margin-bottom: 10px;
+ 
+  }
   
   .proposal{
     margin-bottom: 40px;
@@ -141,4 +146,14 @@
   .countButton {
     text-align: center;
     margin-bottom: 20px;
+  }
+
+  .deadlineButton {
+    align-content: center;
+    margin-bottom: 20px;
+  }
+
+  .buttons-Wrapper {
+    display: flex;
+    justify-content: center;
   }

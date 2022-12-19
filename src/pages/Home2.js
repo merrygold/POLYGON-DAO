@@ -6,12 +6,24 @@ import matic from "../images/Polygon_Faucet.png";
 import { useAccount } from "wagmi";
 import { ethers } from "ethers";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 const Moralis = require("moralis").default;
 const { EvmChain } = require("@moralisweb3/common-evm-utils");
 
+
 const Home2 = () => {
 
-
+  toast.success(`Proposal Created Succesfully ${<a href="https://mumbai.polygonscan.com/tx">Check Here</a>}`, {
+    position: "top-right",
+    autoClose: 5000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+    progress: undefined,
+    theme: "dark",
+  });
 
   console.log("Home Root");
 
@@ -40,6 +52,8 @@ const Home2 = () => {
   const { isConnected, isDisconnected, address: userAddress } = useAccount();
 
   // * CONSTANTS
+
+  const BaseUrl = "https://mumbai.polygonscan.com/tx/"
 
   // * CONTRACT ABI
   const ContractABI = [
@@ -457,64 +471,100 @@ const Home2 = () => {
     const result = proposalDetails?.toJSON();
 
     if (result.countConducted && result.passed) {
-      return { color: "green", text: "Passed" };
+      return {
+        [proposalId]: {
+          color: "green", text: "Passed"
+        }
+      };
     } else if (result.countConducted && !result.passed) {
-      return { color: "red", text: "Rejected" };
+      return {
+        [proposalId]: {
+          color: "red", text: "Rejected"
+        }
+      };
     } else {
-      return { color: "blue", text: "Ongoing" };
+      return {
+        [proposalId]: {
+          color: "blue", text: "Ongoing"
+        }
+      };;
     }
   }
 
   // ? Create a new proposal
   async function createProposal(description, requiredAmount) {
-    
+
     const signer = (new ethers.providers.Web3Provider(window.ethereum)).getSigner()
 
     const feeData = await signer.getFeeData()
 
     // * Gas Calculation
-      // get max fees from gas station
+    // get max fees from gas station
     let maxFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
     let maxPriorityFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
     try {
-        const { data } = await axios({
-            method: 'get',
-            url:'https://gasstation-mumbai.matic.today/v2',
-        })
-        maxFeePerGas = ethers.utils.parseUnits(
-            Math.ceil(data.fast.maxFee) + '',
-            'gwei'
-        )
-        maxPriorityFeePerGas = ethers.utils.parseUnits(
-            Math.ceil(data.fast.maxPriorityFee) + '',
-            'gwei'
-        )
+      const { data } = await axios({
+        method: 'get',
+        url: 'https://gasstation-mumbai.matic.today/v2',
+      })
+      maxFeePerGas = ethers.utils.parseUnits(
+        Math.ceil(data.fast.maxFee) + '',
+        'gwei'
+      )
+      maxPriorityFeePerGas = ethers.utils.parseUnits(
+        Math.ceil(data.fast.maxPriorityFee) + '',
+        'gwei'
+      )
     } catch {
-        // ignore
+      // ignore
     }
 
 
     const daoVerifier = new ethers.Contract(address, ContractABI, signer)
-   
+
     try {
       setLoading(true)
-      const proposalTxn = await daoVerifier.createProposal(description, requiredAmount, {
+      const proposalTxn = await daoVerifier.createProposal(description, ethers.utils.parseEther(requiredAmount), {
         maxFeePerGas,
         maxPriorityFeePerGas,
         gasLimit: "1000000"
-    });
-      await proposalTxn.wait()
+      });
+      await proposalTxn.wait();
+      const HASH = proposalTxn.hash
+      const url = BaseUrl + HASH
+      toast.success(`Proposal Created Succesfully ${<a href="">Check Here</a>}`, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
       setLoading(false)
       setSub(false);
-      
+
     } catch (error) {
+
+      toast.error('Transaction Failed!', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
       console.log(error)
       setLoading(false)
       setSub(false);
     }
 
-    
+
   }
+
 
   // * For Moralis Configuration (Must be Executed "ONLY ONCE")
 
@@ -589,27 +639,35 @@ const Home2 = () => {
 
           // & Make it ascending for the table
           results.reverse();
+          // * Convert uint256 to Ether
+          for (let i = 0; i < results.length; i++) {
+
+            results[i].data.requiredAmount = ethers.utils.formatEther(results[i].data.requiredAmount)
+          }
+
+          // * Parse Bad PRoposals
+          const parsedProposals = []
+          for (let i = 0; i < results.length; i++) {
+            if (results[i].data.requiredAmount > 0.00001) {
+              parsedProposals.push(results[i])
+            }
+          }
+
 
           // * Get Status of the Proposal
-          const statusOfAllProposals = [0];
+          const statusOfAllProposals = [];
 
-          for (let i = 0; i < results.length; i++) {
-            let currentId = results[i].data.uid
-  
+          for (let i = 0; i < parsedProposals.length; i++) {
+            let currentId = parsedProposals[i].data.uid
+
             let statusOfCurrentProposal = await getStatus(currentId);
             statusOfAllProposals.push(statusOfCurrentProposal);
           }
 
-          // * Parse Bad Proposals
-          for (let i = 0; i < results.length; i++) {
-            if (Number(results[i].data.requiredAmount) > 10000) {
-              results.splice(i, 1);
-              i -= 1;
-            }
-          }
+
 
           const table = await Promise.all(
-            results.map(async (e) => [
+            parsedProposals.map(async (e, index) => [
               e.data.uid,
               e.data.description,
               <div className="flex">
@@ -627,15 +685,15 @@ const Home2 = () => {
                 style={{ textDecoration: "none" }}
                 state={{
                   description: e.data.description,
-                  color: statusOfAllProposals[e.data.uid].color,
-                  text: statusOfAllProposals[e.data.uid].text,
+                  color: statusOfAllProposals[index][e.data.uid].color,
+                  text: statusOfAllProposals[index][e.data.uid].text,
                   id: e.data.uid,
                   proposer: e.data.proposer,
                 }}>
-              <Tag
-                color={statusOfAllProposals[e.data.uid].color}
-                text={statusOfAllProposals[e.data.uid].text}
-              />
+                <Tag
+                  color={statusOfAllProposals[index][e.data.uid].color}
+                  text={statusOfAllProposals[index][e.data.uid].text}
+                />
               </Link>,
             ])
           );
@@ -680,7 +738,7 @@ const Home2 = () => {
         }
 
         async function getUserVerify() {
-          
+
           const ownerFunc = "DAOowner";
 
           const ownerOpt = {
@@ -694,29 +752,29 @@ const Home2 = () => {
             ownerOpt
           );
           const ownerAddress = ownerStatus?.toJSON();
-          
+
           if (ownerAddress == userAddress) {
             setIsOwner(true)
             setIsMember(true)
           }
           else {
-          const functionName = "isMember";
+            const functionName = "isMember";
 
-          const options = {
-            abi: ContractABI,
-            functionName: functionName,
-            address: address,
-            chain: chain,
-            params: {
-              "": userAddress,
-            },
-          };
-          const statusRaw = await Moralis.EvmApi.utils.runContractFunction(
-            options
-          );
-          const status = statusRaw?.toJSON();
+            const options = {
+              abi: ContractABI,
+              functionName: functionName,
+              address: address,
+              chain: chain,
+              params: {
+                "": userAddress,
+              },
+            };
+            const statusRaw = await Moralis.EvmApi.utils.runContractFunction(
+              options
+            );
+            const status = statusRaw?.toJSON();
 
-          setIsMember(status);
+            setIsMember(status);
           }
         }
 
@@ -778,7 +836,7 @@ const Home2 = () => {
         await getUserVerify();
 
         if (isMember) {
-   
+
           await getUserDonation();
           await getDaoBalance();
 
@@ -793,25 +851,26 @@ const Home2 = () => {
 
   return (
     <>
+      <ToastContainer />
       <div className="content">
-        
+
         <TabList defaultActiveKey={1} tabStyle="bulbUnion">
           <Tab tabKey={1} tabName="DAO">
-          
+
             <div className="tabContent">
-             
+
               <div style={{ display: "flex", justifyContent: "center", marginTop: "-30px" }}>
-          {!isMember && (
-            <Link style={{ textDecoration: "none" }} to="/qr">
-              <Button
-                onClick={function noRefCheck() {}}
-                text="Please Verify"
-                theme="primary"
-                size="large"
-              />
-            </Link>
-          )}
-        </div> Governance Overview
+                {!isMember && (
+                  <Link style={{ textDecoration: "none" }} to="/qr">
+                    <Button
+                      onClick={function noRefCheck() { }}
+                      text="Please Verify"
+                      theme="primary"
+                      size="large"
+                    />
+                  </Link>
+                )}
+              </div> Governance Overview
               <div className="widgets">
                 <Widget
                   isLoading={isDisconnected || isLoading}
@@ -837,7 +896,7 @@ const Home2 = () => {
                   info={daoBalance}
                   title="DAO Treasury Balance"
                 >
-                
+
                   <img
                     style={{ marginTop: "30px" }}
                     width={"25px"}
@@ -855,51 +914,51 @@ const Home2 = () => {
               </div>
               <div>
 
-              {isMember && isConnected && !isLoading &&
-                <Form
-                  isDisabled={isLoading}
-                  buttonConfig={{
-                    isLoading: sub,
-                    loadingText: "Submitting Proposal",
-                    text: "Submit",
-                    theme: "secondary",
-                  }}
-                  data={[
-                    {
-                      inputWidth: "100%",
-                      name: "Description",
-                      type: "text",
-                      validation: {
-                        required: true,
+                {isMember && isConnected && !isLoading &&
+                  <Form
+                    isDisabled={isLoading}
+                    buttonConfig={{
+                      isLoading: sub,
+                      loadingText: "Submitting Proposal",
+                      text: "Submit",
+                      theme: "secondary",
+                    }}
+                    data={[
+                      {
+                        inputWidth: "100%",
+                        name: "Description",
+                        type: "text",
+                        validation: {
+                          required: true,
+                        },
+                        value: "",
                       },
-                      value: "",
-                    },
-                    {
-                      inputWidth: "20%",
-                      name: "Required Amount",
-                      type: "number",
-                      validation: {
-                        required: true,
+                      {
+                        inputWidth: "20%",
+                        name: "Required Amount",
+                        type: "number",
+                        validation: {
+                          required: true,
+                        },
+                        value: "",
                       },
-                      value: "",
-                    },
-                  ]}
-                  onSubmit={(e) => {
-                    setSub(true)
-                    createProposal(
-                      e.data[0].inputResult,
-                      e.data[1].inputResult
-                    );
-                  }}
-                  title="Create a New Proposal"
-                />
-              
-            }
+                    ]}
+                    onSubmit={(e) => {
+                      setSub(true)
+                      createProposal(
+                        e.data[0].inputResult,
+                        e.data[1].inputResult
+                      );
+                    }}
+                    title="Create a New Proposal"
+                  />
+
+                }
               </div>
 
-   
+
               <div style={{ marginTop: "30px" }}>
-                <div style={{color: "#68738D", marginBottom: "20px", marginTop: "30px", alignContent: "center"}}>
+                <div style={{ color: "#68738D", marginBottom: "20px", marginTop: "30px", alignContent: "center" }}>
                   Recent Proposals</div>
                 <Table
                   isLoading={isDisconnected || isLoading}
@@ -915,16 +974,56 @@ const Home2 = () => {
                   pageSize={6}
                 />
               </div>
-         
+
             </div>
 
             <div></div>
           </Tab>
-          <Tab tabKey={2} tabName="Forum"></Tab>
+          <Tab tabKey={2} tabName="Fund DAO">
+
+            <div className="DAO">
+              <Widget
+                isLoading={isDisconnected || isLoading}
+                info={donation}
+                title="Your Donations:"
+              />
+            </div>
+            {isMember && isConnected && !isLoading &&
+              <Form
+                isDisabled={isLoading}
+                buttonConfig={{
+                  isLoading: sub,
+                  loadingText: "Sending...",
+                  text: "FUND",
+                  theme: "secondary",
+                }}
+                data={[
+                  {
+                    inputWidth: "20%",
+                    name: "Amount you wana FUND",
+                    type: "number",
+                    validation: {
+                      characterMaxLength: 5,
+                      required: true,
+                    },
+                    value: "",
+                  },
+                ]}
+                onSubmit={(e) => {
+                  setSub(true)
+                }}
+                title="FUND OUR DAO"
+              />
+            }
+
+
+
+          </Tab>
           <Tab tabKey={3} tabName="Docs"></Tab>
         </TabList>
       </div>
       <div className="voting"></div>
+
     </>
   );
 };
