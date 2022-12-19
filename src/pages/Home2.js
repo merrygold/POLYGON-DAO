@@ -13,22 +13,21 @@ const { EvmChain } = require("@moralisweb3/common-evm-utils");
 
 
 const Home2 = () => {
-
-  toast.success(`Proposal Created Succesfully ${<a href="https://mumbai.polygonscan.com/tx">Check Here</a>}`, {
-    position: "top-right",
-    autoClose: 5000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-    progress: undefined,
-    theme: "dark",
-  });
-
+  
   console.log("Home Root");
+
+  const CloseButton = ({ closeToast }) => (
+   <button style={{ borderRadius:"20px" , backgroundColor:"green" , border:"solid 2px black"}}> <a style={{color: "white" , textDecoration: "none"}} href={polygonScan} onClick={closeToast}>Watch on Scan</a> </button>
+  );
+
+  
 
   // * DAO Balance
   const [daoBalance, setDaoBalance] = useState(0);
+
+  // * Polygon Scan URL
+  const [polygonScan, setPolygonScan] = useState("");
+
   // * Donations of current user
   const [donation, setDonation] = useState(0);
   // * Check if User verified or Not
@@ -532,7 +531,8 @@ const Home2 = () => {
       await proposalTxn.wait();
       const HASH = proposalTxn.hash
       const url = BaseUrl + HASH
-      toast.success(`Proposal Created Succesfully ${<a href="">Check Here</a>}`, {
+      setPolygonScan(url)
+      toast.success("Proposal Created Succesfully", {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
@@ -850,8 +850,8 @@ const Home2 = () => {
   }, [isConnected, isMember, userAddress]);
 
   return (
-    <>
-      <ToastContainer />
+    <> 
+      <ToastContainer  closeButton={CloseButton}/>
       <div className="content">
 
         <TabList defaultActiveKey={1} tabStyle="bulbUnion">
@@ -938,6 +938,7 @@ const Home2 = () => {
                         name: "Required Amount",
                         type: "number",
                         validation: {
+                          characterMaxLength: 5,
                           required: true,
                         },
                         value: "",

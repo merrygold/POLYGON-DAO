@@ -22,6 +22,10 @@ const Proposal = () => {
   // * Counting Status
   const [counting, setCounting] = useState(false)
 
+    // * Polygon Scan URL
+  const [polygonScan, setPolygonScan] = useState("");
+
+
   // * Check if isOwner
   const [isOwner, setIsOwner] = useState(false);
   // * Check if isMember
@@ -672,8 +676,34 @@ const Proposal = () => {
       );
       await voteTxn.wait();
       console.log("Vote Cast Succesfully");
+
+      const HASH = voteTxn.hash
+      const url = BaseUrl + HASH
+      setPolygonScan(url)
+      toast.success("Proposal Created Succesfully", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+
       setSub(false);
     } catch (error) {
+
+      toast.error('Transaction Failed!', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
       alert(error.data.message);
       setSub(false);
     }
@@ -694,6 +724,7 @@ const Proposal = () => {
 
   return (
     <>
+    <ToastContainer  closeButton={CloseButton}/>
       {isConnected && isMember &&
         <div className="contentProposal">
           <div className="proposal">
