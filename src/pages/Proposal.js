@@ -85,7 +85,7 @@ const Proposal = () => {
 
           try {
             if (!moralisInitialized) {
-              console.log("Moralis Configured");
+              // console.log("Moralis Configured");
               await Moralis.start({
                 apiKey:
                   "zLYFqOyS9Mc6G8jzDjx3PEPj8WrcktAYrdyt3QTf2ogr4tU5kUSSE1xsTkF4Idyn",
@@ -94,7 +94,7 @@ const Proposal = () => {
               });
             }
           } catch (error) {
-            console.log(error)
+            // console.log(error)
           }
           
         }
@@ -172,7 +172,7 @@ const Proposal = () => {
           }
 
           for (let i = 0; i < results.length; i++) {
-            console.log(results[i])
+            // console.log(results[i])
            
           }
 
@@ -227,7 +227,7 @@ const Proposal = () => {
           if (ownerAddress == userAddress) {
             setIsOwner(true);
             setIsMember(true);
-            console.log(ownerAddress == userAddress)
+            // console.log(ownerAddress == userAddress)
           } else {
             setIsOwner(false)
             const functionName = "isMember";
@@ -247,7 +247,7 @@ const Proposal = () => {
             const status = statusRaw?.toJSON();
 
             setIsMember(status);
-            console.log(status)
+            // console.log(status)
           }
         }
 
@@ -342,7 +342,7 @@ const Proposal = () => {
         upDown
       );
       await voteTxn.wait();
-      console.log("Vote Cast Succesfully");
+      // console.log("Vote Cast Succesfully");
 
       const HASH = voteTxn.hash
       const url = BaseUrl + HASH
@@ -517,7 +517,7 @@ const Proposal = () => {
               ]}
               onSubmit={(e) => {
                 if (e.data[0].inputResult[0] === "For") {
-                  console.log("For");
+                  // console.log("For");
                   castVote(true);
                 } else {
                   castVote(false);
