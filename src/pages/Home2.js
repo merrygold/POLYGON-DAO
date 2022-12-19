@@ -594,7 +594,6 @@ const Home2 = () => {
       window.ethereum
     ).getSigner();
 
-    const feeData = await signer.getFeeData();
 
     // * Gas Calculation
     // get max fees from gas station
@@ -846,7 +845,7 @@ const Home2 = () => {
           );
           const ownerAddress = ownerStatus?.toJSON();
 
-          if (ownerAddress == userAddress) {
+          if (ownerAddress === userAddress) {
             setIsOwner(true);
             setIsMember(true);
           } else {
@@ -913,7 +912,7 @@ const Home2 = () => {
           let won = 0;
           //   * Getting Proposal Details
           for (let i = 0; i < eventArray.length; i++) {
-            if (eventArray[i].data.passed == true) {
+            if (eventArray[i].data.passed === true) {
               won++;
             }
           }

@@ -60,7 +60,7 @@ const Proposal = () => {
   const [status, setStatus] = useState({})
 
   // * Get Current User
-  const { isConnected, isDisconnected, address: userAddress } = useAccount();
+  const { isConnected, address: userAddress } = useAccount();
 
   // * CONTRACT ABI
   const ContractABI = [
@@ -455,7 +455,7 @@ const Proposal = () => {
   useEffect(() => {
     if (isConnected) {
       window.scrollTo(0, 100)
-      if (deadline == true) {
+      if (deadline === true) {
         window.scrollTo(0, 100)
       } 
       else {
@@ -542,13 +542,13 @@ const Proposal = () => {
 
           for (let i = 0; i < EveryProposalVotes.length; i++) {
             if (
-              Number(EveryProposalVotes[i].data.proposal) == proposalDetails.id && Number(EveryProposalVotes[i].data.voter) == userAddress
+              Number(EveryProposalVotes[i].data.proposal) === proposalDetails.id && Number(EveryProposalVotes[i].data.voter) === userAddress
             ) {
               setHasVoted(true)
             }
 
             if (
-              Number(EveryProposalVotes[i].data.proposal) == proposalDetails.id
+              Number(EveryProposalVotes[i].data.proposal) === proposalDetails.id
             ) {
               results.push(EveryProposalVotes[i]);
             }
@@ -607,10 +607,10 @@ const Proposal = () => {
           );
           const ownerAddress = ownerStatus?.toJSON();
 
-          if (ownerAddress == userAddress) {
+          if (ownerAddress === userAddress) {
             setIsOwner(true);
             setIsMember(true);
-            console.log(ownerAddress == userAddress)
+            console.log(ownerAddress === userAddress)
           } else {
             setIsOwner(false)
             const functionName = "isMember";
