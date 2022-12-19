@@ -494,14 +494,11 @@ const Home2 = () => {
 
 // ? Create Donation
 async function createDonation(donation) {
-  console.log(donation)
+
   const signer = (new ethers.providers.Web3Provider(window.ethereum)).getSigner()
 
   const daoVerifier = new ethers.Contract(address, ContractABI, signer)
       // * Gas Calculation
-
-
-
 
     // get max fees from gas station
     let maxFeePerGas = ethers.BigNumber.from(40000000000) // fallback to 40 gwei
@@ -523,7 +520,6 @@ async function createDonation(donation) {
       // ignore
     }
 
-
   try {
   
     const donateTxn = await daoVerifier.Donate({
@@ -532,7 +528,10 @@ async function createDonation(donation) {
       maxPriorityFeePerGas,
       gasLimit: "1000000"
     });
+
+    // * wait for 2 confirmations after txn get mined!
     await donateTxn.wait(2);
+
     const HASH = donateTxn.hash
     const URL = BaseUrl + HASH
     setPolygonScan(URL)
@@ -564,8 +563,6 @@ async function createDonation(donation) {
 
     setSubDonation(false);
   }
-
-
 }
 
 
@@ -597,7 +594,6 @@ async function createDonation(donation) {
       // ignore
     }
 
-
     const daoVerifier = new ethers.Contract(address, ContractABI, signer)
 
     try {
@@ -606,6 +602,8 @@ async function createDonation(donation) {
         maxPriorityFeePerGas,
         gasLimit: "1000000"
       });
+
+      // * wait for 2 confirmations after txn get mined!
       await proposalTxn.wait(2);
       const HASH = proposalTxn.hash
       const url = BaseUrl + HASH
@@ -808,10 +806,8 @@ async function createDonation(donation) {
           const donationDetails =
             await Moralis.EvmApi.utils.runContractFunction(options);
             const result = donationDetails?.toJSON()
-            console.log(result)
-            // !!!!!!!!!
-          const donation = result/10*18;
-          console.log(donation);
+  
+          const donation = ethers.utils.formatEther(result.toString());
           setDonation(donation);
         }
 
