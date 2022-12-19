@@ -937,18 +937,41 @@ async function createDonation(donation) {
                   marginTop: "-30px",
                 }}
               >
+
+
+
+
                 {!isMember && (
                   <Link style={{ textDecoration: "none" }} to="/qr">
                     <Button text="Please Verify" theme="primary" size="large" />
                   </Link>
                 )}
+
+              {isConnected && isOwner && (
+                  <Link style={{ textDecoration: "none", marginLeft: "30px" }} to="/owner">
+                    <Tag
+                      color="purple"
+                      onCancelClick={function noRefCheck() {}}
+                      text="Owner Panel"
+                      tone="dark"
+                      fontSize="20px"
+                      style ={{padding: "15px" , marginRight: "5px"}}
+                    />
+                  </Link>
+                )}
+
+
+
+
+
+
                 {isConnected && isOwner ? (
                   <Tag
                     color="green"
                     text="DAO Owner"
                     fontSize="25px"
                     width="fit-content"
-                    style={{ padding: "10px 15px" }}
+                    style={{ padding: "10px 15px", marginLeft: "20px" }}
                   />
                 ) : (
                   isConnected &&
