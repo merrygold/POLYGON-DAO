@@ -1,44 +1,32 @@
-# Implement an ERC20 zk airdrop in 20 minutes with Polygon ID
+# Step 1: Download the PolygonId app & Get your claims from these links
 
-Tutorial: https://0xpolygonid.github.io/tutorials/verifier/on-chain-verification/overview/
+Note: One PolygonID's Address can register only one Metamask Address
+Also, One Address can either be a Member or an Owner
 
-This tutorial uses [Hardhat](https://hardhat.org/) as a development environment and Polygon Mumbai testnet as the network.
+For Owner Claim ID: https://platform-test.polygonid.com/claim-link/22ae3bc5-46b9-4e2f-8364-40533e92172e
 
-## Polygon ID Wallet setup
+For Member Claim ID: https://platform-test.polygonid.com/claim-link/22ae3bc5-46b9-4e2f-8364-40533e92172e
 
-1. Download the Polygon ID mobile app on the [Google Play](https://play.google.com/store/apps/details?id=com.polygonid.wallet) or [Apple app store](https://apps.apple.com/us/app/polygon-id/id1629870183)
+![image](https://user-images.githubusercontent.com/69587947/208851658-a87b5806-b925-469f-b841-dd2f08af8307.png)
 
-2. Open the app and set a pin for security
+Now you have received the claim in your wallet, you have to verify your identity to the smart contract.
 
-3. Follow the [Issue a Polygon ID claim](https://polygontechnology.notion.site/Issue-yourself-a-KYC-Age-Credential-claim-a06a6fe048c34115a3d22d7d1ea315ea) doc to issue yourself a KYC Age Credential attesting your date of birth.
+# Step 2: Verify your identity using Polygon ID zero-knowledge claim solution
 
+Go to our Website: https://polygon-dao.vercel.app/
 
-## Instructions to compile and deploy the smart contract
+i) Click on "Please Verify"
 
-1. Create a .env file in the root of this repo. Copy in .env.sample to add keys
-    `touch .env`
+![image](https://user-images.githubusercontent.com/69587947/208848622-b9c881f0-1acd-455e-ae51-a949a778b781.png)
 
-2. Install dependencies
-    `npm i`
+ii) Scan the QR Code from your Mobile App
 
-3. Compile smart contracts
-    `npx hardhat compile`
+![image](https://user-images.githubusercontent.com/69587947/208848368-f5a6094e-b860-4f6f-9fed-05733a55347d.png)
 
-4. Deploy smart contracts
-    `npx hardhat run --network mumbai scripts/deploy.js`
- - results in x tx hash: 0xecf178144CceC09417412D66E2ecC8a2841eE228
- - example contract creation: https://mumbai.polygonscan.com/address/0xecf178144ccec09417412d66e2ecc8a2841ee228
+-> Follow the Prompts and you will be verified after the Transaction from your Metamask
 
-5. Update the `ERC20VerifierAddress` variable in scripts/set-request.js with your deployed contract address
+# Congrats, You are Verified:
 
-6. Run set-request to send the zk request to the smart contract
-    `npx hardhat run --network mumbai scripts/set-request.js`
-    - Successful tx means the age query has been set up: https://mumbai.polygonscan.com/tx/0x2ddb2db7b3d35cf7cdf658209b257fd2a51c49df2249bf46ede8979eb8410ffb
+Now, you can interact with the DAO (Create Proposals, Vote on Proposals etc.)
 
-
-## Claim airdrop from a frontend
-
-1. Design a proof request (see my example in qrValueProofRequestExample.json) and more info in the docs: [Query Based Requests](https://0xpolygonid.github.io/tutorials/wallet/proof-generation/types-of-auth-requests-and-proofs/#query-based-request)
-    - Update the `contract_address` field to your deployed contract address
-
-2. Create a frontend with a QR code to the proof request. [Codesandbox example](https://codesandbox.io/s/zisu81?file=/index.js) A user should be able to scan the QR code from the Polygon ID app and trustlessly prove that they are old enough to claim the ERC20 airdrop without revealing their actual birthday. 
+![image](https://user-images.githubusercontent.com/69587947/208853099-7095d9bc-94e3-425a-9cb3-a335cb3579c5.png)
