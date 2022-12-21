@@ -9,7 +9,7 @@ Also, One Address can either be a Member or an Owner `
 
 ![image](https://user-images.githubusercontent.com/69587947/208851658-a87b5806-b925-469f-b841-dd2f08af8307.png)
 
-Now you have received the claim in your wallet, you have to verify your identity to the smart contract.
+## `Now you have received the claim in your wallet, you have to verify your identity to the smart contract.`
 
 # Step 2: Verify your identity using Polygon ID zero-knowledge claim solution
 
