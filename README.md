@@ -10,7 +10,7 @@
 2. Vote on Proposals
 3. Donate to the DAO
 
-###` Only Owner:`
+### ` Only Owner:`
 
 1. All the above, and
 2. Count Votes (Change the Proposal Status to Rejected/Passed)
