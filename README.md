@@ -27,6 +27,10 @@
 1. All the above, and
 2. Count Votes (Change the Proposal Status to Rejected/Passed)
 ![image](https://user-images.githubusercontent.com/69587947/208856694-da4bb42a-c8f6-4cb1-a3a7-43f8e8082120.png)
+![image](https://user-images.githubusercontent.com/69587947/208860188-18fa4697-6dee-4fe4-801a-7493005f09a5.png)
+
+### DAO transfered the "Required Amount" to the Proposer
+![image](https://user-images.githubusercontent.com/69587947/208860405-6daec327-e266-4c5d-840b-a17d1daf147f.png)
 
 # `3. Owner Also gets an Owner Panel`
 
