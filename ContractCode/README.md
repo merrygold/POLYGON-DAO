@@ -25,7 +25,7 @@ ii) `Scan the QR Code` from your Mobile App
 
 ### `-> Follow the Prompts and you will be verified after the Transaction from your Metamask`
 
-# Congrats, You are Verified:
+# Congrats, You are Verified: (Import the Metamask wallet from Mobile to the PC for Interacting with the Live Website)
 
 Now, you can interact with the DAO (Create Proposals, Vote on Proposals etc.)
 
