@@ -1,4 +1,4 @@
-### `Follow the Instructions in ContractCode folder's Readme for Verification of your Eth Address`
+### `Follow the Instructions in ContractCode folder's Readme for Verification of your Eth Address & Test the Live App`
 ### Live Contract Link: https://mumbai.polygonscan.com/address/0x80a6b117511c6527e57f25d04d9adfee23ae1b0e
 # Live DApp Link: https://polygon-dao.vercel.app/
 
